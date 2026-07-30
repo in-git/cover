@@ -144,7 +144,7 @@ body {
   justify-content: center;
   height: 60px;
   color: var(--text-tertiary);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 /* 分类筛选器 */
@@ -159,7 +159,7 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.8);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
   outline: none;
 }
@@ -329,7 +329,7 @@ body {
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   border-radius: 9px;
   cursor: pointer;
@@ -430,7 +430,7 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: #ffffff;
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
@@ -517,7 +517,7 @@ body {
 }
 
 .prop-label {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -601,7 +601,9 @@ input[type='color']::-webkit-color-swatch {
 .preset-btn:hover {
   transform: scale(1.15);
 }
-
+.i-icon {
+  display: inline-flex;
+}
 /* ===== 爆款标题 - 打开模态框的触发按钮 ===== */
 .hot-title-open-btn {
   width: 100%;
@@ -613,7 +615,7 @@ input[type='color']::-webkit-color-swatch {
   background: rgba(0, 113, 227, 0.06);
   border: 1px solid rgba(0, 113, 227, 0.18);
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--accent);
   cursor: pointer;
@@ -739,7 +741,7 @@ input[type='color']::-webkit-color-swatch {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 8px;
@@ -770,7 +772,7 @@ input[type='color']::-webkit-color-swatch {
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 14px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
@@ -872,7 +874,7 @@ input[type='color']::-webkit-color-swatch {
   border: 1px solid rgba(0, 0, 0, 0.06);
   background: rgba(0, 0, 0, 0.03);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -958,7 +960,7 @@ input[type='color']::-webkit-color-swatch {
   border: 1px solid rgba(0, 0, 0, 0.04);
   color: var(--text-primary);
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
@@ -997,7 +999,7 @@ button svg {
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
@@ -1316,7 +1318,7 @@ button svg {
   border: 1px solid var(--rm-border);
   background: var(--rm-bg-elevated);
   color: var(--rm-text-secondary);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
@@ -1432,7 +1434,7 @@ button svg {
   gap: 10px;
   height: 100%;
   color: var(--rm-text-tertiary);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 /* 旋转动画 (IconPark Loading 组件自带 spin 属性, 此规则已无消费者, 保留以备复用) */
@@ -1457,7 +1459,7 @@ button svg {
   -webkit-backdrop-filter: blur(2px);
   border-radius: 8px;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 /* 拖拽上传遮罩 (覆盖整个模态框) */

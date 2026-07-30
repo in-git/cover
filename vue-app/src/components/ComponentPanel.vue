@@ -295,7 +295,7 @@ function onFontChange(value: string): void {
     <div
       v-else
       style="
-        font-size: 12px;
+        font-size: 14px;
         color: var(--text-tertiary);
         text-align: center;
         margin-top: 30px;

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// ===== 左侧栏: 模板中心 + 背景图快选 (含 simplex 噪声随机生成) =====
+// ===== 左侧栏: 模板中心 + 资源管理器入口 + 本地图片快选 =====
 import { useCanvasStore } from '@/stores/canvas';
 import { useResourceStore } from '@/stores/resource';
 import { useTemplateStore } from '@/stores/template';
-import { Add, Close, Magic } from '@icon-park/vue-next';
+import { Add, Close, FolderOpen } from '@icon-park/vue-next';
 
 const canvasStore = useCanvasStore();
 const templateStore = useTemplateStore();
@@ -53,15 +53,15 @@ const resourceStore = useResourceStore();
 
     <div class="divider"></div>
 
-    <!-- 背景图: 随机生成 + 本地图片快选 -->
+    <!-- 资源管理器入口 -->
     <div class="sidebar-header">
-      <span class="section-title">背景图</span>
+      <span class="section-title">资源管理器</span>
       <button
         class="btn-icon-only"
-        @click="canvasStore.applyNoiseBackground"
-        title="使用 SimplexNoise 随机生成一张背景图"
+        @click="resourceStore.openResourceManager"
+        title="打开资源管理器"
       >
-        <Magic :size="16" />
+        <FolderOpen :size="16" />
       </button>
     </div>
 
@@ -80,7 +80,7 @@ const resourceStore = useResourceStore();
         class="empty-bg-hint"
         @click="resourceStore.openResourceManager"
       >
-        点击右上「资源管理」上传图片
+        点击打开资源管理器上传图片
       </div>
     </div>
     <div v-else class="loading-bg">加载中...</div>

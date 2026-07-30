@@ -4,7 +4,6 @@ import type { BgFitMode, Platform } from '@/types';
 import { calcBgImgProps } from '@/utils/background';
 import { CANVAS_DIMS } from '@/utils/constants';
 import { fabric } from '@/utils/fabric';
-import { generateNoiseBackground } from '@/utils/noiseBackground';
 import type { CanvasHistory } from './history';
 import type { CanvasState } from './state';
 
@@ -96,19 +95,6 @@ export function useCanvasBackground(
     applyBackgroundToBoth(url);
   }
 
-  // ===== 生成 simplex 噪声背景并应用 (按当前平台比例生成, 避免拉伸变形) =====
-  function applyNoiseBackground(): void {
-    const dims = CANVAS_DIMS[activePlatform.value];
-    // 输出尺寸保持与画布同比例, 1/4 分辨率 (480×270 或 270×480)
-    // 背景图为柔和渐变, 放大后无明显锯齿, 同时控制生成耗时
-    const ratio = dims.w / dims.h;
-    const baseSize = 480;
-    const w = ratio >= 1 ? baseSize : Math.round(baseSize * ratio);
-    const h = ratio >= 1 ? Math.round(baseSize / ratio) : baseSize;
-    const dataUrl = generateNoiseBackground(w, h);
-    applyBackgroundToBoth(dataUrl, 1);
-  }
-
   // ===== 画布背景色同步 =====
   function updateCanvasBg(): void {
     (['bilibili', 'douyin'] as Platform[]).forEach((platform) => {
@@ -150,7 +136,6 @@ export function useCanvasBackground(
     setBgFitMode,
     applyPublicBackground,
     applyImageResource,
-    applyNoiseBackground,
     updateCanvasBg,
     updateBgOpacity,
     handleBgUpload,

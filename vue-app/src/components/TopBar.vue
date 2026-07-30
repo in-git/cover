@@ -2,7 +2,7 @@
 // ===== 顶部栏: 平台切换 (左) + 撤销重做与吸附开关 (中, 屏幕水平居中) + 资源管理/导出 (右) =====
 import { useCanvasStore } from '@/stores/canvas';
 import { useResourceStore } from '@/stores/resource';
-import { Magnet, Redo, Undo } from '@icon-park/vue-next';
+import { FolderOpen, Magnet, Redo, Undo } from '@icon-park/vue-next';
 
 const canvasStore = useCanvasStore();
 const resourceStore = useResourceStore();
@@ -72,7 +72,7 @@ const resourceStore = useResourceStore();
         title="打开资源管理器 (上传/管理 图片与字体)"
         @click="resourceStore.openResourceManager"
       >
-        <FolderOpen :size="14" />
+        <folder-open :size="14" />
         资源管理
       </button>
       <button
