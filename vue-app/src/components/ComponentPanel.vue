@@ -3,9 +3,9 @@
 import { useCanvasStore } from '@/stores/canvas';
 import { useResourceStore } from '@/stores/resource';
 import { useUiStore } from '@/stores/ui';
-import type { ResourceItem } from '@/types';
 import { HOT_TITLES } from '@/utils/constants';
 import { fontPreviewFamily } from '@/utils/font';
+import type { SelectValue } from 'ant-design-vue/es/select';
 import { computed, ref } from 'vue';
 
 const canvasStore = useCanvasStore();
@@ -26,24 +26,36 @@ function applyHotTitleAndClose(text: string): void {
   uiStore.showHotTitles = false;
 }
 
-// ===== 字体选择器 =====
-// 当前字体显示名 (根据 fontFamily 反查, 找不到则回退"系统默认")
-const currentFontLabel = computed(() => {
-  const family = canvasStore.activeProps.fontFamily;
-  if (!family || family === '-apple-system') return '系统默认';
-  const font = resourceStore.resourceList.fonts.find(
-    (f) => fontPreviewFamily(f.name) === family,
-  );
-  return font ? font.name : '系统默认';
-});
-
-function isCurrentFont(font: ResourceItem): boolean {
-  return fontPreviewFamily(font.name) === canvasStore.activeProps.fontFamily;
+// ===== 字体选择器 (ant-design-vue Select) =====
+// 对接后端 /api/resources?category=fonts, 选项 = 系统默认 + 已上传字体列表
+interface FontOption {
+  value: string;
+  label: string;
+  fontFamily: string;
 }
 
-/** 应用字体到当前选中文字 (保持 popover 打开, 方便快速预览切换) */
-function applyFont(font: ResourceItem): void {
-  canvasStore.applyFontToActive(font);
+const fontOptions = computed<FontOption[]>(() => {
+  const opts: FontOption[] = [
+    { value: '-apple-system', label: '系统默认', fontFamily: '-apple-system' },
+  ];
+  resourceStore.resourceList.fonts.forEach((f) => {
+    const family = fontPreviewFamily(f.name);
+    opts.push({ value: family, label: f.name, fontFamily: family });
+  });
+  return opts;
+});
+
+/** 切换字体: 系统默认走 resetFontToSystem, 上传字体走 applyFontToActive */
+function onFontChange(value: SelectValue): void {
+  const v = value as string;
+  if (v === '-apple-system') {
+    canvasStore.resetFontToSystem();
+    return;
+  }
+  const font = resourceStore.resourceList.fonts.find(
+    (f) => fontPreviewFamily(f.name) === v,
+  );
+  if (font) canvasStore.applyFontToActive(font);
 }
 </script>
 
@@ -163,44 +175,29 @@ function applyFont(font: ResourceItem): void {
           @input="canvasStore.updateTextContent"
         />
 
-        <!-- 字体选择 (popover 弹出, 对接后端 /api/resources?category=fonts) -->
+        <!-- 字体选择 (ant-design-vue Select, 对接后端 /api/resources?category=fonts) -->
         <div class="prop-row" style="margin-top: 10px">
           <span class="prop-label">字体</span>
-          <button class="hot-title-trigger" @click="uiStore.toggleFontPicker()">
-            <span class="font-trigger-name">{{ currentFontLabel }}</span>
-            <iconify-icon
-              :icon="
-                uiStore.showFontPicker
-                  ? 'lucide:chevron-up'
-                  : 'lucide:chevron-down'
-              "
-              width="12"
-            ></iconify-icon>
-          </button>
         </div>
-        <div v-if="uiStore.showFontPicker" class="font-picker-popover">
-          <div
-            v-if="resourceStore.resourceList.fonts.length === 0"
-            class="font-picker-empty"
-          >
-            <iconify-icon icon="lucide:package-open" width="22"></iconify-icon>
-            <span>暂无字体, 点击左上角资源管理器上传</span>
-          </div>
-          <div v-else class="font-picker-list">
+        <a-select
+          :value="canvasStore.activeProps.fontFamily"
+          style="width: 100%"
+          size="small"
+          :options="fontOptions"
+          placeholder="选择字体"
+          @change="onFontChange"
+        >
+          <template #option="{ fontFamily }">
             <div
-              v-for="font in resourceStore.resourceList.fonts"
-              :key="font.url"
-              class="font-card"
-              :class="{ active: isCurrentFont(font) }"
-              :style="{ '--font-preview': fontPreviewFamily(font.name) }"
-              :title="font.name"
-              @click="applyFont(font)"
+              class="font-select-option"
+              :style="{
+                fontFamily: `${fontFamily}, -apple-system, sans-serif`,
+              }"
             >
-              <span class="font-card-sample">永不失联的爱 1234</span>
-              <span class="font-card-name">{{ font.name }}</span>
+              永不失联的爱 1234
             </div>
-          </div>
-        </div>
+          </template>
+        </a-select>
 
         <!-- 爆款标题列表 (popover 弹出) -->
         <div class="prop-row" style="margin-top: 10px">

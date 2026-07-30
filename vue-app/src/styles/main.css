@@ -649,94 +649,12 @@ input[type='color']::-webkit-color-swatch {
   box-shadow: 0 2px 4px rgba(0, 113, 227, 0.2);
 }
 
-/* ===== 字体选择器 (组件配置面板, 浅色主题) ===== */
-.font-trigger-name {
-  max-width: 110px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 字体选择器 popover 容器 */
-.font-picker-popover {
-  margin-top: 8px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  animation: popoverFadeIn 0.18s ease;
-}
-
-.font-picker-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 18px 10px;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.font-picker-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-/* 字体卡片 (点击应用) */
-.font-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease,
-    background 0.15s ease;
-}
-
-.font-card:hover {
-  transform: translateY(-1px);
-  border-color: rgba(0, 113, 227, 0.35);
-  background: rgba(0, 113, 227, 0.04);
-  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.1);
-}
-
-.font-card.active {
-  border-color: var(--accent);
-  background: rgba(0, 113, 227, 0.08);
-}
-
-/* 字体预览样张 (使用 --font-preview 变量动态切换字体) */
-.font-card-sample {
-  font-family:
-    var(--font-preview),
-    -apple-system,
-    sans-serif;
-  font-size: 18px;
+/* ===== 字体选择器 (ant-design-vue Select 选项预览样张) ===== */
+.font-select-option {
+  font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary);
   letter-spacing: 0.5px;
   line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.font-card-name {
-  font-size: 11px;
-  color: var(--text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

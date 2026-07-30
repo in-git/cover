@@ -213,6 +213,17 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
     return false;
   }
 
+  // ===== 重置当前文字为系统默认字体 (-apple-system) =====
+  function resetFontToSystem(): void {
+    const obj = activeObject.value;
+    if (obj && (obj.type === 'i-text' || obj.type === 'text')) {
+      obj.set('fontFamily', '-apple-system');
+      activeProps.fontFamily = '-apple-system';
+      currentCanvas.value && currentCanvas.value.requestRenderAll();
+      autoSaveTemplate();
+    }
+  }
+
   // ===== 应用字体到当前选中文字 (ResourceManager 调用, 完成后关闭弹窗) =====
   function applyFontResource(
     font: ResourceItem,
@@ -239,6 +250,7 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
     handleImageUpload,
     handleReplaceImage,
     applyFontToActive,
+    resetFontToSystem,
     applyFontResource,
   };
 }

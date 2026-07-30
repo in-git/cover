@@ -54,7 +54,6 @@ export function useCanvasSelection(state: CanvasState, history: CanvasHistory) {
     // 点击组件自动切换右侧到「组件配置」面板, 并收起爆款标题弹出层
     uiStore.setTab('component');
     uiStore.showHotTitles = false;
-    uiStore.showFontPicker = false;
   }
 
   // ===== 复制 / 粘贴 =====
