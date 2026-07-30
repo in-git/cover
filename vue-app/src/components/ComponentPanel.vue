@@ -118,11 +118,7 @@ function onFontChange(value: SelectValue): void {
           }}</span>
         </div>
 
-        <div
-          v-if="canvasStore.isText"
-          class="preset-colors-wrap"
-          style="margin-top: 8px"
-        >
+        <div class="preset-colors-wrap" style="margin-top: 8px">
           <div
             v-for="color in canvasStore.fillPresetColors"
             :key="color"
@@ -131,34 +127,6 @@ function onFontChange(value: SelectValue): void {
             :title="color"
             @click="canvasStore.setPresetColor(color)"
           ></div>
-        </div>
-      </div>
-
-      <!-- 毛玻璃组件专属配置 (边框、背景及颜色) -->
-      <div v-if="canvasStore.isGlassCard" class="prop-group">
-        <div class="prop-row"><span class="prop-label">毛玻璃背景色</span></div>
-        <div class="color-picker-wrap">
-          <input
-            type="color"
-            v-model="canvasStore.glassProps.fill"
-            @input="canvasStore.updateGlassProp"
-          />
-          <span class="color-hex">{{
-            canvasStore.glassProps.fill.toUpperCase()
-          }}</span>
-        </div>
-        <div class="prop-row" style="margin-top: 10px">
-          <span class="prop-label">毛玻璃边框颜色</span>
-        </div>
-        <div class="color-picker-wrap">
-          <input
-            type="color"
-            v-model="canvasStore.glassProps.stroke"
-            @input="canvasStore.updateGlassProp"
-          />
-          <span class="color-hex">{{
-            canvasStore.glassProps.stroke.toUpperCase()
-          }}</span>
         </div>
       </div>
 
@@ -235,7 +203,7 @@ function onFontChange(value: SelectValue): void {
           type="range"
           v-model="canvasStore.activeProps.fontSize"
           min="20"
-          max="240"
+          max="350"
           step="1"
           @input="canvasStore.updateActiveProp('fontSize')"
         />
@@ -282,7 +250,8 @@ function onFontChange(value: SelectValue): void {
         margin-top: 30px;
       "
     >
-      点击画布中的元素即可进行精准编辑<br />支持 Delete 删除，Ctrl+C/V 复制粘贴
+      点击画布中的元素即可进行精准编辑<br />支持 Delete 删除，Ctrl+C/V
+      复制粘贴<br /><br />💡 将图片直接拖到画布即可生成图片组件
     </div>
 
     <!-- 隐藏的替换图片 input -->

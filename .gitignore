@@ -1,1 +1,89 @@
+# ============== 依赖 / Dependencies ==============
 node_modules/
+.pnpm-store/
+.yarn/
+.jspm-packages/
+
+# ============== 构建产物 / Build output ==============
+# 注意: vue-app/dist/ 不排除 —— 它是 server.py (Flask) 启动时托管的前端入口, 需纳入版本控制
+build/
+*.tsbuildinfo
+.npmrc.local
+
+# ============== Python ==============
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+pythonenv*/
+.python-version
+
+# ============== 环境变量 / Env ==============
+.env
+.env.*
+!.env.example
+!.env.template
+
+# ============== 日志 / Logs ==============
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+pids/
+*.pid
+*.seed
+
+# ============== 缓存 / Cache ==============
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.tsbuildinfo
+.vite/
+.turbo/
+
+# ============== 测试覆盖率 / Coverage ==============
+coverage/
+*.lcov
+.nyc_output/
+
+# ============== 编辑器 / IDE ==============
+.trae/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+# ============== 操作系统 / OS ==============
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+
+# ============== 上传与临时文件 / Uploads & Temp ==============
+uploads/*
+!uploads/.gitkeep
+*.tmp
+*.bak
+*.orig
+
+# ============== 其它 / Misc ==============
+*.local
+.DS_Store

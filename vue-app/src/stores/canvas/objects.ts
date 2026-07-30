@@ -1,5 +1,5 @@
 // ===== 组件层 =====
-// 添加各类组件 (文字/图形/线条/图标/毛玻璃) + 属性更新 + 图片替换 + 资源应用
+// 添加各类组件 (文字/图形/线条) + 属性更新 + 图片拖拽生成 + 图片替换 + 资源应用
 import type { ActiveProps, ResourceItem } from '@/types';
 import { CANVAS_DIMS } from '@/utils/constants';
 import { fabric } from '@/utils/fabric';
@@ -8,15 +8,8 @@ import type { CanvasHistory } from './history';
 import type { CanvasState } from './state';
 
 export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
-  const {
-    activeObject,
-    isText,
-    isGlassCard,
-    activeProps,
-    glassProps,
-    activePlatform,
-    currentCanvas,
-  } = state;
+  const { activeObject, isText, activeProps, activePlatform, currentCanvas } =
+    state;
   const { saveHistoryState, autoSaveTemplate } = history;
 
   function updateActiveProp(prop: keyof ActiveProps): void {
@@ -40,42 +33,12 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
     updateTextContent();
   }
 
-  function updateGlassProp(): void {
-    if (!activeObject.value || !isGlassCard.value) return;
-    activeObject.value.set({
-      fill: glassProps.fill,
-      stroke: glassProps.stroke,
-    });
-    currentCanvas.value?.requestRenderAll();
-    autoSaveTemplate();
-  }
-
   function setPresetColor(color: string): void {
     activeProps.fill = color;
     updateActiveProp('fill');
   }
 
   // ===== 添加组件 =====
-  function addGlassCard(): void {
-    const dims = CANVAS_DIMS[activePlatform.value];
-    const w = Math.min(600, dims.w * 0.5);
-    const h = Math.min(320, dims.h * 0.3);
-    const rect = new fabric.Rect({
-      left: (dims.w - w) / 2,
-      top: (dims.h - h) / 2,
-      width: w,
-      height: h,
-      fill: 'rgba(255, 255, 255, 0.2)',
-      stroke: 'rgba(255, 255, 255, 0.6)',
-      strokeWidth: 2,
-      rx: 24,
-      ry: 24,
-    });
-    currentCanvas.value.add(rect);
-    currentCanvas.value.setActiveObject(rect);
-    autoSaveTemplate();
-  }
-
   function addText(): void {
     const dims = CANVAS_DIMS[activePlatform.value];
     const fontSize = activePlatform.value === 'douyin' ? 120 : 192;
@@ -127,45 +90,38 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
     currentCanvas.value.setActiveObject(rect);
   }
 
-  function addIcon(): void {
+  // ===== 拖拽图片到画布: 生成图片组件 (本地上传至画布, 不上传服务器) =====
+  // pointer 为画布坐标系 (0..dims.w / 0..dims.h) 的落点, 缺省则居中
+  function addImageFiles(
+    files: File[],
+    pointer?: { x: number; y: number },
+  ): void {
+    const c = currentCanvas.value;
+    if (!c) return;
     const dims = CANVAS_DIMS[activePlatform.value];
-    const starPath =
-      'M 12 2 L 15.09 8.26 L 22 9.27 L 17 14.14 L 18.18 21.02 L 12 17.77 L 5.82 21.02 L 7 14.14 L 2 9.27 L 8.91 8.26 Z';
-    const icon = new fabric.Path(starPath, {
-      left: dims.w / 2,
-      top: dims.h / 2,
-      originX: 'center',
-      originY: 'center',
-      fill: '#0071e3',
-      scaleX: 6,
-      scaleY: 6,
-    });
-    currentCanvas.value.add(icon);
-    currentCanvas.value.setActiveObject(icon);
-  }
-
-  // ===== 图片上传 / 替换 =====
-  function handleImageUpload(e: Event): void {
-    const target = e.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (f) => {
-      fabric.Image.fromURL(f.target!.result as string, (img: any) => {
-        const dims = CANVAS_DIMS[activePlatform.value];
-        img.scaleToWidth(Math.min(600, dims.w * 0.5));
-        img.set({
-          left: dims.w / 2,
-          top: dims.h / 2,
-          originX: 'center',
-          originY: 'center',
+    const images = files.filter((f) => f.type.startsWith('image/'));
+    images.forEach((file, i) => {
+      const reader = new FileReader();
+      reader.onload = (f) => {
+        fabric.Image.fromURL(f.target!.result as string, (img: any) => {
+          img.scaleToWidth(Math.min(600, dims.w * 0.5));
+          const baseLeft = pointer ? pointer.x : dims.w / 2;
+          const baseTop = pointer ? pointer.y : dims.h / 2;
+          img.set({
+            left: baseLeft + i * 30,
+            top: baseTop + i * 30,
+            originX: 'center',
+            originY: 'center',
+          });
+          c.add(img);
+          c.setActiveObject(img);
+          c.requestRenderAll();
+          saveHistoryState();
+          autoSaveTemplate();
         });
-        currentCanvas.value.add(img);
-        currentCanvas.value.setActiveObject(img);
-      });
-    };
-    reader.readAsDataURL(file);
-    target.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   function handleReplaceImage(e: Event): void {
@@ -240,14 +196,11 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
     updateActiveProp,
     updateTextContent,
     applyHotTitle,
-    updateGlassProp,
     setPresetColor,
-    addGlassCard,
     addText,
     addLine,
     addShape,
-    addIcon,
-    handleImageUpload,
+    addImageFiles,
     handleReplaceImage,
     applyFontToActive,
     resetFontToSystem,

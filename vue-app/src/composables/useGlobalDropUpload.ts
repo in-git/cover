@@ -1,9 +1,10 @@
 // ===== 全局拖拽上传 composable =====
-// 监听 window 拖拽事件, 将文件/文件夹拖到页面任意位置均可上传
-// - 模态框关闭时: 显示全屏提示层, 拖到任意位置触发上传
-// - 模态框打开时: 不显示提示层 (模态框 dropzone 自身处理, 已 .stop 阻止冒泡),
-//   但拖到模态框外的遮罩处仍可由本监听接收上传
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+// 监听 window 拖拽事件, 协调「拖到画布生成图片组件」与「上传到服务器」两种行为:
+// - 资源管理器关闭时: 拖图片到画布由 CanvasStage 接管生成图片组件 (本地图读取);
+//   拖到非画布区域不上传, 仅阻止浏览器默认打开文件行为。
+// - 资源管理器打开时: 拖到页面任意位置 (含模态框遮罩) 均上传到服务器。
+//   模态框内置 dropzone 已 @drop.stop, 不会冒泡到此处。
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useResourceStore } from '@/stores/resource';
 import { traverseEntries } from '@/composables/useResourceUpload';
 
@@ -42,12 +43,6 @@ export function useGlobalDropUpload() {
   const globalDragging = ref(false);
   let dragCounter = 0;
 
-  // 全屏提示层仅在「拖拽中 + 模态框关闭」时显示
-  // 模态框打开时由其内置 dropzone 接管视觉反馈
-  const showGlobalDrop = computed(
-    () => globalDragging.value && !resourceStore.resourceModalOpen,
-  );
-
   function onDragEnter(e: DragEvent): void {
     if (!isFileDrag(e) || resourceStore.rmUploading) return;
     dragCounter++;
@@ -56,7 +51,7 @@ export function useGlobalDropUpload() {
 
   function onDragOver(e: DragEvent): void {
     if (!isFileDrag(e)) return;
-    // 必须 preventDefault 才能在 drop 事件中接收文件
+    // 必须 preventDefault 才能在 drop 事件中接收文件, 同时阻止浏览器默认打开文件
     e.preventDefault();
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'copy';
@@ -76,6 +71,9 @@ export function useGlobalDropUpload() {
     e.preventDefault();
     dragCounter = 0;
     globalDragging.value = false;
+    // 仅在资源管理器打开时上传到服务器;
+    // 关闭时拖到画布由 CanvasStage 处理 (生成图片组件), 拖到其他位置忽略
+    if (!resourceStore.resourceModalOpen) return;
     if (resourceStore.rmUploading) return;
     // 若拖到模态框内置 dropzone, 其 @drop.stop 会阻止冒泡, 不会进入这里
     const files = await collectFiles(e);
@@ -99,6 +97,5 @@ export function useGlobalDropUpload() {
     window.removeEventListener('dragleave', onDragLeave);
     window.removeEventListener('drop', onDrop);
   });
-
-  return { showGlobalDrop };
 }
+

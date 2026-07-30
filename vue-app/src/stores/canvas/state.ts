@@ -3,7 +3,7 @@
 // - fabric 实例使用 shallowRef 持有 (避免深度响应拖慢性能)
 // - 响应式 UI 状态使用 ref/reactive
 // - 历史栈 (撤销/重做) 按平台独立维护
-import type { ActiveProps, BgFitMode, GlassProps, Platform } from '@/types';
+import type { ActiveProps, BgFitMode, Platform } from '@/types';
 import { FILL_PRESET_COLORS } from '@/utils/constants';
 import { computed, reactive, ref, shallowRef } from 'vue';
 
@@ -32,7 +32,6 @@ export function useCanvasState() {
   const activeObject = shallowRef<FabricObject>(null);
   const isText = ref(false);
   const isImage = ref(false);
-  const isGlassCard = ref(false);
   const hasColor = ref(false);
 
   // ===== 共享背景状态 (两个画布完全同步) =====
@@ -59,10 +58,6 @@ export function useCanvasState() {
     opacity: 1,
     textValue: '',
     fontFamily: '-apple-system',
-  });
-  const glassProps = reactive<GlassProps>({
-    fill: 'rgba(255, 255, 255, 0.25)',
-    stroke: 'rgba(255, 255, 255, 0.5)',
   });
 
   const fillPresetColors = FILL_PRESET_COLORS;
@@ -93,7 +88,6 @@ export function useCanvasState() {
     activeObject,
     isText,
     isImage,
-    isGlassCard,
     hasColor,
     // 共享背景
     canvasBg,
@@ -106,7 +100,6 @@ export function useCanvasState() {
     isProcessingHistory,
     // 属性镜像
     activeProps,
-    glassProps,
     fillPresetColors,
     // 计算
     currentCanvas,

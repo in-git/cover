@@ -186,17 +186,73 @@ def serve_uploads(category, filename):
     return send_from_directory(CATEGORIES[category]['dir'], filename)
 
 
+# ===== Vue 前端静态托管 (生产模式) =====
+# 托管 vue-app/dist 构建产物, 使其作为 Python 启动时的前端入口
+# 路由优先级 (Werkzeug): 静态前缀 (/api, /uploads, /assets) 优先于 catch-all
+VUE_DIST = Path(__file__).parent / 'vue-app' / 'dist'
+
+
+@app.route('/')
+def serve_vue_index():
+    """Vue 前端入口: 返回 dist/index.html"""
+    index = VUE_DIST / 'index.html'
+    if not index.exists():
+        return jsonify({
+            'error': '前端未构建',
+            'hint': "请先在 vue-app/ 目录执行 `pnpm build` 生成 dist/"
+        }), 404
+    return send_from_directory(VUE_DIST, 'index.html')
+
+
+@app.route('/assets/<path:filename>')
+def serve_vue_assets(filename):
+    """Vue 构建产物: JS / CSS / 图片等静态资源"""
+    return send_from_directory(VUE_DIST / 'assets', filename)
+
+
+@app.route('/<path:filepath>')
+def serve_vue_spa(filepath):
+    """SPA 兜底: 命中 dist 内文件则返回, 否则回落 index.html (前端路由)"""
+    # 避免拦截 API 与上传请求 (理论上不会进入, 因上方路由已优先匹配)
+    if filepath.startswith(('api/', 'uploads/')):
+        return jsonify({'error': 'Not Found', 'path': filepath}), 404
+    target = VUE_DIST / filepath
+    if target.is_file():
+        return send_from_directory(VUE_DIST, filepath)
+    # SPA 客户端路由回落
+    index = VUE_DIST / 'index.html'
+    if index.exists():
+        return send_from_directory(VUE_DIST, 'index.html')
+    return jsonify({'error': 'Not Found'}), 404
+
+
 if __name__ == '__main__':
+    HOST, PORT = '0.0.0.0', 5000
+    entry_url = f'http://localhost:{PORT}/'
+
     print("=" * 50)
     print("文件资源管理服务器启动中...")
-    print("访问地址: http://localhost:5000")
+    print(f"访问地址: {entry_url}")
     print(f"资源根目录: {RESOURCE_ROOT}")
+    print(f"前端入口: {VUE_DIST}")
     print("\nAPI 接口:")
     print("  GET    /api/resources              列出所有资源")
     print("  GET    /api/resources?category=X   列出指定分类资源")
     print("  POST   /api/upload                 上传文件 (支持多文件)")
     print("  DELETE /api/resources/<cat>/<name> 删除资源")
     print("  GET    /uploads/<cat>/<name>       访问资源文件")
+    print("\n前端路由 (Vue SPA):")
+    print("  GET    /                            前端入口 index.html")
+    print("  GET    /assets/<file>               构建产物 JS/CSS")
+    print("  GET    /<任意前端路由>               SPA 回落 index.html")
     print("=" * 50)
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # 启动前检查前端是否已构建 (仅提示, 不强制打开浏览器)
+    if not (VUE_DIST / 'index.html').exists():
+        print(f"\n⚠️  警告: 未找到 {VUE_DIST / 'index.html'}")
+        print("   前端未构建, 访问 / 将返回 404。请先执行:")
+        print("   cd vue-app && pnpm build")
+    else:
+        print(f"\n✅ 前端已构建, 用户访问 {entry_url} 即可打开前端项目")
+
+    app.run(host=HOST, port=PORT, debug=True)

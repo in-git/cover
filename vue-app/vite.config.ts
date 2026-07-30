@@ -7,6 +7,7 @@ import { defineConfig } from 'vite';
 
 // https://vitejs.dev/config
 export default defineConfig({
+  base: './',
   plugins: [
     vue({
       template: {
@@ -29,10 +30,11 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 8989,
     open: true,
+    // 开发模式: 将后端 API 与上传资源代理到 Flask (5000)
+    // 生产模式: 由 server.py 直接托管 vue-app/dist/, 无需此代理
     proxy: {
-      // 将前端 /api 与 /uploads 请求代理到 Flask 后端, 避免跨域
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,

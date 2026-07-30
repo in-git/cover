@@ -12,10 +12,8 @@ export function useCanvasSelection(state: CanvasState, history: CanvasHistory) {
     activeObject,
     isText,
     isImage,
-    isGlassCard,
     hasColor,
     activeProps,
-    glassProps,
     activePlatform,
     currentCanvas,
     clipboard,
@@ -35,9 +33,7 @@ export function useCanvasSelection(state: CanvasState, history: CanvasHistory) {
     activeObject.value = obj;
     isText.value = obj.type === 'i-text' || obj.type === 'text';
     isImage.value = obj.type === 'image';
-    isGlassCard.value = !!obj.isGlassCard;
-    hasColor.value =
-      !isImage.value && obj.type !== 'group' && !isGlassCard.value;
+    hasColor.value = !isImage.value && obj.type !== 'group';
 
     activeProps.fill = obj.fill || obj.stroke || '#FEC000';
     activeProps.opacity = obj.opacity ?? 1;
@@ -45,10 +41,6 @@ export function useCanvasSelection(state: CanvasState, history: CanvasHistory) {
       activeProps.fontSize = obj.fontSize || 192;
       activeProps.textValue = obj.text || '';
       activeProps.fontFamily = obj.fontFamily || '-apple-system';
-    }
-    if (isGlassCard.value) {
-      glassProps.fill = obj.fill || 'rgba(255, 255, 255, 0.25)';
-      glassProps.stroke = obj.stroke || 'rgba(255, 255, 255, 0.5)';
     }
 
     // 点击组件自动切换右侧到「组件配置」面板, 并收起爆款标题弹出层

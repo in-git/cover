@@ -71,9 +71,3 @@ export interface ActiveProps {
   /** 当前文字字体 family (用于字体选择器高亮当前项) */
   fontFamily: string;
 }
-
-/** 毛玻璃组件属性 */
-export interface GlassProps {
-  fill: string;
-  stroke: string;
-}

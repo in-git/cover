@@ -22,8 +22,8 @@ const resourceStore = useResourceStore();
 // 键盘快捷键 (内部注册/卸载 window keydown 监听)
 useKeyboard();
 
-// 全局拖拽上传: 拖文件/文件夹到页面任意位置均可上传 (内部注册/卸载 window 拖拽监听)
-const { showGlobalDrop } = useGlobalDropUpload();
+// 全局拖拽协调: 资源管理器打开时上传服务器, 关闭时由画布接管生成图片组件
+useGlobalDropUpload();
 
 // 主区域组件引用 (用于触发 resize)
 const mainAreaRef = ref<InstanceType<typeof MainArea> | null>(null);
@@ -82,16 +82,5 @@ onUnmounted(() => {
 
     <!-- 资源管理器大屏模态框 -->
     <ResourceManager />
-
-    <!-- 全局拖拽上传提示层: 拖文件到页面任意位置均触发上传 -->
-    <div v-if="showGlobalDrop" class="global-drop-overlay">
-      <div class="global-drop-inner">
-        <iconify-icon icon="lucide:upload-cloud" width="56"></iconify-icon>
-        <div class="global-drop-title">松开鼠标即可上传</div>
-        <div class="global-drop-sub">
-          支持图片与字体 · 自动按类型归类 · 支持文件夹批量
-        </div>
-      </div>
-    </div>
   </div>
 </template>

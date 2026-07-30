@@ -25,7 +25,7 @@ export function useCanvasHistory(state: CanvasState) {
 
   /** 序列化当前画布 (过滤掉引导线与背景图) */
   function serializeCanvas(c: any): any {
-    const json = c.toJSON(['isBackgroundImage', 'isGlassCard']);
+    const json = c.toJSON(['isBackgroundImage']);
     if (json.objects) {
       json.objects = json.objects.filter(
         (obj: any) =>
