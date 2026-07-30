@@ -28,6 +28,7 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
     'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 14px;
   background: var(--bg-gradient);
   color: var(--text-primary);
   height: 100vh;
@@ -46,11 +47,18 @@ body {
   border-radius: 18px;
 }
 
-/* 布局容器 */
+/* 布局容器: #app 为 Vue 挂载点 (提供全屏高度与外边距),
+   #app-root 为 App.vue 根元素 (flex 排列三栏, 填满挂载点) */
 #app {
   display: flex;
   height: 100vh;
   padding: 16px;
+}
+
+#app-root {
+  display: flex;
+  flex: 1;
+  min-width: 0;
   gap: 16px;
 }
 
@@ -641,6 +649,99 @@ input[type='color']::-webkit-color-swatch {
   box-shadow: 0 2px 4px rgba(0, 113, 227, 0.2);
 }
 
+/* ===== 字体选择器 (组件配置面板, 浅色主题) ===== */
+.font-trigger-name {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 字体选择器 popover 容器 */
+.font-picker-popover {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: popoverFadeIn 0.18s ease;
+}
+
+.font-picker-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 10px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.font-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+/* 字体卡片 (点击应用) */
+.font-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.font-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 113, 227, 0.35);
+  background: rgba(0, 113, 227, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.1);
+}
+
+.font-card.active {
+  border-color: var(--accent);
+  background: rgba(0, 113, 227, 0.08);
+}
+
+/* 字体预览样张 (使用 --font-preview 变量动态切换字体) */
+.font-card-sample {
+  font-family:
+    var(--font-preview),
+    -apple-system,
+    sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.font-card-name {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 背景图适配模式按钮组 (拉伸/原比例/覆盖) */
 .bg-fit-modes {
   display: flex;
@@ -837,16 +938,30 @@ button iconify-icon {
 }
 
 /* ================================================= */
-/* ============== 资源管理器 大屏模态框 ============== */
+/* ======== 资源管理器 大屏模态框 (深色风格) ========= */
 /* ================================================= */
 
-/* 遮罩层 */
+/* 局部深色变量: 覆盖全局白色变量, 仅作用于资源管理器内部 */
 .rm-overlay {
+  /* 深色调色板 */
+  --rm-bg: #1c1c1e;
+  --rm-bg-elevated: rgba(255, 255, 255, 0.05);
+  --rm-bg-hover: rgba(255, 255, 255, 0.08);
+  --rm-bg-active: rgba(255, 255, 255, 0.14);
+  --rm-border: rgba(255, 255, 255, 0.1);
+  --rm-border-strong: rgba(255, 255, 255, 0.18);
+  --rm-text-primary: #f5f5f7;
+  --rm-text-secondary: #a1a1a6;
+  --rm-text-tertiary: #6e6e73;
+  --rm-accent: #0a84ff;
+  --rm-accent-soft: rgba(10, 132, 255, 0.16);
+  --rm-danger: #ff453a;
+
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(8px) saturate(120%);
-  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -863,7 +978,7 @@ button iconify-icon {
   }
 }
 
-/* 模态框主体 (大屏 90vw x 88vh) */
+/* 模态框主体 (大屏 90vw x 88vh) - 深色磨砂玻璃 */
 .rm-modal {
   width: 90vw;
   max-width: 1280px;
@@ -873,6 +988,14 @@ button iconify-icon {
   flex-direction: column;
   padding: 22px 26px;
   border-radius: 22px;
+  background: rgba(28, 28, 30, 0.82);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--rm-border);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  color: var(--rm-text-primary);
   animation: rmModalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -901,11 +1024,11 @@ button iconify-icon {
   gap: 8px;
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--rm-text-primary);
 }
 
 .rm-title iconify-icon {
-  color: var(--accent);
+  color: var(--rm-accent);
 }
 
 .rm-close {
@@ -913,8 +1036,8 @@ button iconify-icon {
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--text-secondary);
+  background: var(--rm-bg-elevated);
+  color: var(--rm-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -923,8 +1046,8 @@ button iconify-icon {
 }
 
 .rm-close:hover {
-  background: rgba(255, 59, 48, 0.12);
-  color: var(--danger);
+  background: rgba(255, 69, 58, 0.18);
+  color: var(--rm-danger);
   transform: rotate(90deg);
 }
 
@@ -932,7 +1055,7 @@ button iconify-icon {
 .rm-tabs {
   display: flex;
   gap: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--rm-bg-elevated);
   border-radius: 12px;
   padding: 3px;
   margin-bottom: 16px;
@@ -945,7 +1068,7 @@ button iconify-icon {
   padding: 8px 16px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--rm-text-secondary);
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -955,13 +1078,14 @@ button iconify-icon {
 }
 
 .rm-tab.active {
-  background: #ffffff;
-  color: var(--accent);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  background: var(--rm-bg-active);
+  color: var(--rm-text-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .rm-tab:hover:not(.active) {
-  color: var(--text-primary);
+  color: var(--rm-text-primary);
+  background: var(--rm-bg-hover);
 }
 
 .rm-tab-count {
@@ -971,16 +1095,16 @@ button iconify-icon {
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--rm-text-secondary);
   border-radius: 9px;
   font-size: 10px;
   font-weight: 600;
 }
 
 .rm-tab.active .rm-tab-count {
-  background: rgba(0, 113, 227, 0.15);
-  color: var(--accent);
+  background: var(--rm-accent-soft);
+  color: var(--rm-accent);
 }
 
 /* 拖拽上传区 */
@@ -991,10 +1115,10 @@ button iconify-icon {
   justify-content: center;
   gap: 8px;
   padding: 26px 20px;
-  border: 2px dashed rgba(0, 0, 0, 0.12);
+  border: 2px dashed var(--rm-border-strong);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--text-secondary);
+  background: var(--rm-bg-elevated);
+  color: var(--rm-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 14px;
@@ -1002,16 +1126,17 @@ button iconify-icon {
 }
 
 .rm-dropzone:hover {
-  border-color: var(--accent);
-  background: rgba(0, 113, 227, 0.04);
-  color: var(--accent);
+  border-color: var(--rm-accent);
+  background: var(--rm-accent-soft);
+  color: var(--rm-accent);
 }
 
 .rm-dropzone.is-dragging {
-  border-color: var(--accent);
-  background: rgba(0, 113, 227, 0.1);
-  color: var(--accent);
+  border-color: var(--rm-accent);
+  background: var(--rm-accent-soft);
+  color: var(--rm-accent);
   transform: scale(1.01);
+  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.18);
 }
 
 .rm-dropzone iconify-icon {
@@ -1027,17 +1152,17 @@ button iconify-icon {
 .rm-drop-text strong {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--rm-text-primary);
 }
 
 .rm-drop-text span {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--rm-text-tertiary);
 }
 
 .rm-drop-hint {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--rm-text-tertiary);
   margin-top: 4px;
 }
 
@@ -1045,7 +1170,7 @@ button iconify-icon {
 .rm-progress {
   position: relative;
   height: 24px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--rm-bg-elevated);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 14px;
@@ -1055,7 +1180,7 @@ button iconify-icon {
   position: absolute;
   inset: 0;
   width: 0;
-  background: linear-gradient(90deg, var(--accent), #5ac8fa);
+  background: linear-gradient(90deg, var(--rm-accent), #5ac8fa);
   transition: width 0.2s ease;
   border-radius: 12px;
 }
@@ -1070,7 +1195,7 @@ button iconify-icon {
   font-size: 11px;
   font-weight: 500;
   color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* 资源网格容器 (滚动) */
@@ -1090,7 +1215,7 @@ button iconify-icon {
   justify-content: center;
   gap: 6px;
   height: 100%;
-  color: var(--text-tertiary);
+  color: var(--rm-text-tertiary);
 }
 
 .rm-empty iconify-icon {
@@ -1100,7 +1225,7 @@ button iconify-icon {
 .rm-empty p {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--rm-text-secondary);
   margin: 0;
 }
 
@@ -1128,8 +1253,8 @@ button iconify-icon {
   border-radius: 12px;
   background-size: cover;
   background-position: center;
-  background-color: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background-color: var(--rm-bg-elevated);
+  border: 1px solid var(--rm-border);
   cursor: pointer;
   overflow: hidden;
   transition:
@@ -1139,7 +1264,7 @@ button iconify-icon {
 
 .rm-image-thumb:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
 }
 
 .rm-apply-badge {
@@ -1151,7 +1276,7 @@ button iconify-icon {
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: rgba(0, 113, 227, 0.65);
+  background: rgba(10, 132, 255, 0.7);
   opacity: 0;
   transition: opacity 0.18s ease;
   backdrop-filter: blur(2px);
@@ -1173,7 +1298,7 @@ button iconify-icon {
 
 .rm-file-name {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--rm-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1188,7 +1313,7 @@ button iconify-icon {
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: var(--text-tertiary);
+  color: var(--rm-text-tertiary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1203,8 +1328,8 @@ button iconify-icon {
 }
 
 .rm-delete-btn:hover {
-  background: rgba(255, 59, 48, 0.1);
-  color: var(--danger);
+  background: rgba(255, 69, 58, 0.16);
+  color: var(--rm-danger);
 }
 
 /* 字体资源网格 */
@@ -1228,10 +1353,10 @@ button iconify-icon {
   border-radius: 12px;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.9),
-    rgba(240, 242, 245, 0.9)
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.03)
   );
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--rm-border);
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -1242,8 +1367,8 @@ button iconify-icon {
 
 .rm-font-preview:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  border-color: var(--accent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  border-color: var(--rm-accent);
 }
 
 .rm-font-sample {
@@ -1253,13 +1378,13 @@ button iconify-icon {
     sans-serif;
   font-size: 26px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--rm-text-primary);
   letter-spacing: 0.5px;
   text-align: center;
   line-height: 1.3;
 }
 
-/* 滚动条美化 (仅资源管理器内部) */
+/* 滚动条美化 (仅资源管理器内部) - 深色 */
 .rm-grid-wrap::-webkit-scrollbar {
   width: 8px;
 }
@@ -1269,10 +1394,70 @@ button iconify-icon {
 }
 
 .rm-grid-wrap::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
 
 .rm-grid-wrap::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* ================================================= */
+/* ========== 全局拖拽上传 提示层 (任意位置) ========= */
+/* ================================================= */
+
+/* 全屏拖拽接收层: 拖文件到页面任意位置均触发上传 */
+.global-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 132, 255, 0.12);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  animation: rmOverlayFade 0.18s ease;
+  pointer-events: none;
+}
+
+.global-drop-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 48px 64px;
+  border: 3px dashed var(--rm-accent, #0a84ff);
+  border-radius: 24px;
+  background: rgba(28, 28, 30, 0.7);
+  color: #f5f5f7;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+.global-drop-inner iconify-icon {
+  color: #0a84ff;
+  animation: dropBounce 1.2s ease-in-out infinite;
+}
+
+@keyframes dropBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.global-drop-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.global-drop-sub {
+  font-size: 13px;
+  color: rgba(245, 245, 247, 0.7);
 }
