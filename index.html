@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilibili Cover Studio - macOS Sonoma Style</title>
+
+    <!-- 引入 Vue 3 和 Fabric.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/fabric@5.3.0/dist/fabric.min.js"></script>
+    <!-- 引入 Iconify (Lucide 细线性图标集, 契合 Apple HIG 风格) -->
+    <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="app">
+        <!-- 左侧：爆款模板控制与管理 -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <span class="section-title">模板中心</span>
+                <!-- 新增空白模板功能 (Antv风格 Icon) -->
+                <button class="btn-icon-only" @click="createEmptyTemplate" title="新增空白模板">
+                    <iconify-icon icon="lucide:plus" width="16"></iconify-icon>
+                </button>
+            </div>
+
+            <div class="template-list">
+                <div class="template-card" v-for="(tpl, index) in templates" :key="tpl.id"
+                    :class="{ active: currentTemplateId === tpl.id }" @click="loadTemplate(tpl)">
+                    <div class="tpl-info">
+                        <div class="tpl-color-preview" :style="{ background: tpl.bgPreview }"></div>
+                        <span class="tpl-title">{{ tpl.name }}</span>
+                    </div>
+
+                    <div class="tpl-actions">
+                        <!-- 删除模板 (Antv风格 Icon) -->
+                        <button class="action-btn delete" @click.stop="deleteTemplate(index)" title="删除模板">
+                            <iconify-icon icon="lucide:x" width="14"></iconify-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 公共背景图片列表 -->
+            <div class="sidebar-header">
+                <span class="section-title">公共背景图库</span>
+                <button class="btn-icon-only" @click="fetchPublicBackgrounds" title="刷新">
+                    <iconify-icon icon="lucide:refresh-cw" width="16"></iconify-icon>
+                </button>
+            </div>
+            <!-- 分类筛选 -->
+            <div class="category-filter">
+                <select v-model="selectedCategory" @change="filterByCategory">
+                    <option value="">全部分类</option>
+                    <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+            </div>
+            <div class="public-bg-grid flex-1" v-if="!loadingBackgrounds">
+                <div class="public-bg-thumb" v-for="(bg, idx) in publicBackgrounds" :key="idx"
+                    @click="applyPublicBackground(bg.url)" :style="{ backgroundImage: `url(${bg.thumbnail})` }"
+                    :title="bg.title">
+                    <span class="bg-category-tag"></span>
+                </div>
+            </div>
+            <div v-else class="loading-bg">加载中...</div>
+        </aside>
+
+        <!-- 中间：画布工作区 -->
+        <main class="main-area" ref="mainArea">
+            <!-- 顶部导出区与撤销反撤销控制 -->
+            <div class="top-bar">
+                <!-- 平台切换分段控制器 -->
+                <div class="platform-segmented glass-panel">
+                    <button class="platform-seg-btn" :class="{ active: activePlatform === 'bilibili' }"
+                        @click="switchPlatform('bilibili')" title="B站横屏封面">
+                        B站
+                    </button>
+                    <button class="platform-seg-btn" :class="{ active: activePlatform === 'douyin' }"
+                        @click="switchPlatform('douyin')" title="抖音竖屏封面">
+                        抖音
+                    </button>
+                </div>
+
+                <div class="top-bar-right">
+                    <div class="history-toolbar glass-panel">
+                        <button class="tool-btn icon-only" @click="undo" :disabled="!canUndo" title="撤销 (Ctrl+Z)">
+                            <iconify-icon icon="lucide:undo-2" width="16"></iconify-icon>
+                        </button>
+                        <button class="tool-btn icon-only" @click="redo" :disabled="!canRedo" title="反撤销 (Ctrl+Y)">
+                            <iconify-icon icon="lucide:redo-2" width="16"></iconify-icon>
+                        </button>
+                    </div>
+                    <button class="btn-apple" @click="exportCurrent" title="导出当前平台封面">导出当前</button>
+                    <button class="btn-apple btn-primary" @click="exportBoth" title="同时导出 B站和抖音两个封面">同时导出</button>
+                </div>
+            </div>
+
+            <!-- 画布舞台：同时容纳 B站与抖音两个画布，通过 v-show 切换 -->
+            <div class="canvas-stage">
+                <!-- B站 1920×1080 横屏画布 -->
+                <div class="canvas-container-wrap" v-show="activePlatform === 'bilibili'"
+                    :style="{ transform: `scale(${bilibiliScale})` }">
+                    <canvas id="bilibiliCanvas"></canvas>
+                    <!-- 警戒线 - B站 1440 中央安全区 -->
+                    <div class="safety-guide safety-bilibili"></div>
+                </div>
+                <!-- 抖音 1080×1920 竖屏画布 -->
+                <div class="canvas-container-wrap" v-show="activePlatform === 'douyin'"
+                    :style="{ transform: `scale(${douyinScale})` }">
+                    <canvas id="douyinCanvas"></canvas>
+                    <!-- 警戒线 - 抖音中央 1080×1320 安全区（避开顶 220 / 底 380 UI overlay） -->
+                    <div class="safety-guide safety-douyin"></div>
+                </div>
+            </div>
+
+            <!-- 底部：悬浮组件添加栏（全部用 Icon 表示） -->
+            <div class="bottom-toolbar glass-panel">
+                <button class="tool-btn icon-only" @click="addText" title="添加文字">
+                    <iconify-icon icon="lucide:type" width="18"></iconify-icon>
+                </button>
+                <button class="tool-btn icon-only" @click="addLine" title="分割线">
+                    <iconify-icon icon="lucide:minus" width="18"></iconify-icon>
+                </button>
+                <button class="tool-btn icon-only" @click="addShape" title="色块图形">
+                    <iconify-icon icon="lucide:square" width="18"></iconify-icon>
+                </button>
+                <!-- 新增：可自由拉伸的矩形色块 -->
+                <button class="tool-btn icon-only" @click="addGlassCard" title="添加矩形 (可自由拉伸)">
+                    <iconify-icon icon="lucide:square-stack" width="18"></iconify-icon>
+                </button>
+                <button class="tool-btn icon-only" @click="triggerImageUpload" title="上传图片">
+                    <iconify-icon icon="lucide:image" width="18"></iconify-icon>
+                </button>
+                <button class="tool-btn icon-only" @click="addIcon" title="添加图标">
+                    <iconify-icon icon="lucide:star" width="18"></iconify-icon>
+                </button>
+            </div>
+        </main>
+
+        <!-- 右侧：属性编辑面板 -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <span class="section-title">属性配置</span>
+            </div>
+
+            <!-- 选项卡 (iOS 分段控制器) -->
+            <div class="tab-segmented">
+                <button class="tab-seg-btn" :class="{ active: activeTab === 'component' }"
+                    @click="activeTab = 'component'">组件配置</button>
+                <button class="tab-seg-btn" :class="{ active: activeTab === 'background' }"
+                    @click="activeTab = 'background'">背景配置</button>
+            </div>
+
+            <!-- 背景配置面板 -->
+            <div v-show="activeTab === 'background'" class="tab-panel">
+                <!-- 全局画布背景控制 -->
+                <div class="prop-group">
+                    <div class="prop-row">
+                        <span class="prop-label">画布背景色</span>
+                    </div>
+                    <div class="color-picker-wrap">
+                        <input type="color" v-model="canvasBg" @input="updateCanvasBg">
+                        <span class="color-hex">{{ canvasBg.toUpperCase() }}</span>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-secondary" @click="triggerBgUpload">自定义背景图</button>
+                    </div>
+                </div>
+
+                <!-- 背景图透明度控制 (两个画布共享) -->
+                <div class="prop-group" v-if="sharedBgImageUrl">
+                    <!-- 背景图适配方式 -->
+                    <div class="prop-row">
+                        <span class="prop-label">背景图适配</span>
+                    </div>
+                    <div class="bg-fit-modes">
+                        <button class="bg-fit-btn" :class="{ active: bgFitMode === 'stretch' }"
+                            @click="setBgFitMode('stretch')" title="拉伸填满 (可能变形)">拉伸</button>
+                        <button class="bg-fit-btn" :class="{ active: bgFitMode === 'contain' }"
+                            @click="setBgFitMode('contain')" title="原比例完整显示 (留白)">原比例</button>
+                        <button class="bg-fit-btn" :class="{ active: bgFitMode === 'cover' }"
+                            @click="setBgFitMode('cover')" title="原比例覆盖填满 (裁剪)">覆盖</button>
+                    </div>
+
+                    <div class="prop-row" style="margin-top: 12px;">
+                        <span class="prop-label">背景图透明度</span>
+                        <span class="color-hex">{{ Math.round(bgOpacity * 100) }}%</span>
+                    </div>
+                    <input type="range" v-model="bgOpacity" min="0.05" max="1" step="0.05" @input="updateBgOpacity">
+                </div>
+            </div>
+
+            <!-- 组件配置面板 -->
+            <div v-show="activeTab === 'component'" class="tab-panel">
+                <!-- 选中元素的参数配置 -->
+                <div v-if="activeObject">
+                    <!-- 编组与图层 (纯图标一排) -->
+                    <div class="prop-group">
+                        <div class="btn-row icon-only-row">
+                            <button class="btn-secondary icon-only-btn" @click="groupObjects" :disabled="!canGroup"
+                                title="编组">
+                                <iconify-icon icon="lucide:group" width="15"></iconify-icon>
+                            </button>
+                            <button class="btn-secondary icon-only-btn" @click="ungroupObjects" :disabled="!canUngroup"
+                                title="取消编组">
+                                <iconify-icon icon="lucide:ungroup" width="15"></iconify-icon>
+                            </button>
+                            <button class="btn-secondary icon-only-btn" @click="bringToFront" title="移至顶层">
+                                <iconify-icon icon="lucide:bring-to-front" width="15"></iconify-icon>
+                            </button>
+                            <button class="btn-secondary icon-only-btn" @click="sendToBack" title="移至底层">
+                                <iconify-icon icon="lucide:send-to-back" width="15"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 填充颜色 (文字/图形) -->
+                    <div class="prop-group" v-if="hasColor">
+                        <div class="prop-row">
+                            <span class="prop-label">填充颜色</span>
+                        </div>
+                        <div class="color-picker-wrap">
+                            <input type="color" v-model="activeProps.fill" @input="updateActiveProp('fill')">
+                            <span class="color-hex">{{ activeProps.fill.toUpperCase() }}</span>
+                        </div>
+
+                        <div class="preset-colors-wrap" v-if="isText" style="margin-top: 8px;">
+                            <div class="preset-btn" v-for="color in fillPresetColors" :key="color"
+                                :style="{ background: color }" @click="setPresetColor(color)" :title="color"></div>
+                        </div>
+                    </div>
+
+                    <!-- 毛玻璃组件专属配置 (边框、背景及颜色) -->
+                    <div class="prop-group" v-if="isGlassCard">
+                        <div class="prop-row"><span class="prop-label">毛玻璃背景色</span></div>
+                        <div class="color-picker-wrap">
+                            <input type="color" v-model="glassProps.fill" @input="updateGlassProp">
+                            <span class="color-hex">{{ glassProps.fill.toUpperCase() }}</span>
+                        </div>
+                        <div class="prop-row" style="margin-top: 10px;"><span class="prop-label">毛玻璃边框颜色</span></div>
+                        <div class="color-picker-wrap">
+                            <input type="color" v-model="glassProps.stroke" @input="updateGlassProp">
+                            <span class="color-hex">{{ glassProps.stroke.toUpperCase() }}</span>
+                        </div>
+                    </div>
+
+                    <!-- 文字配置与爆款标题选择 -->
+                    <div class="prop-group" v-if="isText">
+                        <div class="prop-row">
+                            <span class="prop-label">标题内容设置</span>
+                        </div>
+                        <input type="text" class="text-input-field" v-model="activeProps.textValue"
+                            @input="updateTextContent" placeholder="输入封面标题..." />
+
+                        <!-- 爆款标题列表 (popover 弹出) -->
+                        <div class="prop-row" style="margin-top: 10px;">
+                            <span class="prop-label">🔥 爆款标题推荐</span>
+                            <button class="hot-title-trigger" @click="showHotTitles = !showHotTitles">
+                                {{ showHotTitles ? '收起' : '展开' }}
+                                <iconify-icon :icon="showHotTitles ? 'lucide:chevron-up' : 'lucide:chevron-down'"
+                                    width="12"></iconify-icon>
+                            </button>
+                        </div>
+                        <div class="hot-title-popover" v-if="showHotTitles">
+                            <button class="hot-title-tag" v-for="t in hotTitles" :key="t"
+                                @click="applyHotTitle(t); showHotTitles = false">{{ t }}</button>
+                        </div>
+
+                        <div class="prop-row" style="margin-top: 10px;">
+                            <span class="prop-label">字号</span>
+                            <span class="color-hex">{{ activeProps.fontSize }}px</span>
+                        </div>
+                        <input type="range" v-model="activeProps.fontSize" min="20" max="240" step="1"
+                            @input="updateActiveProp('fontSize')">
+                    </div>
+
+                    <!-- 不透明度 -->
+                    <div class="prop-group">
+                        <div class="prop-row">
+                            <span class="prop-label">不透明度</span>
+                            <span class="color-hex">{{ Math.round(activeProps.opacity * 100) }}%</span>
+                        </div>
+                        <input type="range" v-model="activeProps.opacity" min="0.05" max="1" step="0.05"
+                            @input="updateActiveProp('opacity')">
+                    </div>
+
+                    <!-- 图片替换 -->
+                    <div class="prop-group" v-if="isImage">
+                        <div class="btn-row">
+                            <button class="btn-secondary" @click="triggerReplaceImage">替换图片</button>
+                        </div>
+                    </div>
+
+                    <button class="btn-danger-light" @click="deleteObject">删除选中元素 (Delete)</button>
+                </div>
+
+                <div v-else style="font-size: 12px; color: var(--text-tertiary); text-align: center; margin-top: 30px;">
+                    点击画布中的元素即可进行精准编辑<br>支持 Delete 删除，Ctrl+C/V 复制粘贴
+                </div>
+            </div>
+        </aside>
+
+        <!-- 隐藏的文件选择 Input 控件 -->
+        <input type="file" ref="imageInput" class="file-input" accept="image/*" @change="handleImageUpload">
+        <input type="file" ref="bgInput" class="file-input" accept="image/*" @change="handleBgUpload">
+        <input type="file" ref="replaceImgInput" class="file-input" accept="image/*" @change="handleReplaceImage">
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted, onUnmounted, shallowRef, computed, watch, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const mainArea = ref(null);
+                const imageInput = ref(null);
+                const bgInput = ref(null);
+                const replaceImgInput = ref(null);
+
+                // ===== 平台切换核心状态 =====
+                // 画布尺寸规范: B站 1920×1080 横屏, 抖音 1080×1920 竖屏 (9:16)
+                const CANVAS_DIMS = {
+                    bilibili: { w: 1920, h: 1080 },
+                    douyin: { w: 1080, h: 1920 }
+                };
+                const activePlatform = ref('bilibili');  // 当前激活平台
+
+                // 两个 fabric.Canvas 实例
+                const canvases = shallowRef({ bilibili: null, douyin: null });
+
+                // 各自独立的缩放比例 (横竖屏适配不同)
+                const bilibiliScale = ref(0.4);
+                const douyinScale = ref(0.4);
+
+                // 右侧属性面板选项卡: component=组件配置, background=背景配置
+                const activeTab = ref('component');
+
+                const currentTemplateId = ref(null);
+                const activeObject = shallowRef(null);
+                const isText = ref(false);
+                const isImage = ref(false);
+                const isGlassCard = ref(false);
+                const hasColor = ref(false);
+
+                // ===== 共享背景状态 (两个画布完全同步) =====
+                const canvasBg = ref('#FFFFFF');
+                const bgOpacity = ref(1);
+                const sharedBgImageUrl = ref(null);  // 共享的背景图 URL
+                // 背景图适配方式: stretch=拉伸填满 | contain=原比例完整显示(留白) | cover=原比例覆盖(裁剪)
+                const bgFitMode = ref('stretch');
+                // 两个画布各自的 fabric 背景图实例 (因 scale 不同需分别持有)
+                const canvasBackgroundImages = shallowRef({ bilibili: null, douyin: null });
+
+                // 爆款标题 popover 开关
+                const showHotTitles = ref(false);
+
+                // 剪贴板缓存
+                const clipboard = shallowRef(null);
+
+                // ===== 各平台独立的历史栈 =====
+                const undoStacks = reactive({ bilibili: [], douyin: [] });
+                const redoStacks = reactive({ bilibili: [], douyin: [] });
+                const isProcessingHistory = ref(false);
+
+                // 当前激活画布的快捷引用
+                const currentCanvas = computed(() => canvases.value[activePlatform.value]);
+                const currentUndoStack = computed(() => undoStacks[activePlatform.value]);
+                const currentRedoStack = computed(() => redoStacks[activePlatform.value]);
+
+                const canUndo = computed(() => currentUndoStack.value.length > 0);
+                const canRedo = computed(() => currentRedoStack.value.length > 0);
+
+                const publicBackgrounds = ref([]);
+                const loadingBackgrounds = ref(false);
+                const categories = ref([]);
+                const selectedCategory = ref('');
+                const allBackgrounds = ref([]);
+
+                // 爆款标题列表
+                const hotTitles = ref([
+                    "千万别学前端了！？",
+                    "我用AI一周赚了10W？",
+                    "3分钟带你彻底搞懂底层逻辑",
+                    "普通人如何逆袭实现财富自由",
+                    "全网都在搜的宝藏网站"
+                ]);
+
+                const fetchCategories = async () => {
+                    try {
+                        const response = await fetch('http://localhost:5000/api/categories');
+                        const result = await response.json();
+                        if (result.success) categories.value = result.data;
+                    } catch (e) {
+                        console.error('获取分类失败:', e);
+                    }
+                    const savedCategory = localStorage.getItem('bg_category');
+                    if (savedCategory && categories.value.includes(savedCategory)) {
+                        selectedCategory.value = savedCategory;
+                        filterByCategory();
+                    } else {
+                        fetchPublicBackgrounds();
+                    }
+                };
+
+                const fetchPublicBackgrounds = async () => {
+                    loadingBackgrounds.value = true;
+                    try {
+                        const response = await fetch('http://localhost:5000/api/images?count=50');
+                        const result = await response.json();
+                        if (result.success) {
+                            allBackgrounds.value = result.data;
+                            publicBackgrounds.value = result.data;
+                        }
+                    } catch (e) {
+                        console.error('获取公共背景失败:', e);
+                    }
+                    loadingBackgrounds.value = false;
+                };
+
+                const filterByCategory = async () => {
+                    loadingBackgrounds.value = true;
+                    localStorage.setItem('bg_category', selectedCategory.value);
+                    try {
+                        const catParam = selectedCategory.value ? `&category=${encodeURIComponent(selectedCategory.value)}` : '';
+                        const response = await fetch(`http://localhost:5000/api/images?count=20${catParam}`);
+                        const result = await response.json();
+                        if (result.success) publicBackgrounds.value = result.data;
+                    } catch (e) {
+                        console.error('获取分类图片失败:', e);
+                    }
+                    loadingBackgrounds.value = false;
+                };
+
+                const fillPresetColors = ['#FEC000', '#EFEFEF', '#00C0FF'];
+
+                const activeProps = reactive({
+                    fill: '#FEC000',
+                    fontSize: 192,
+                    opacity: 1,
+                    textValue: ''
+                });
+
+                const glassProps = reactive({
+                    fill: 'rgba(255, 255, 255, 0.25)',
+                    stroke: 'rgba(255, 255, 255, 0.5)'
+                });
+
+                const loadStoredTemplates = () => {
+                    const saved = localStorage.getItem('bilibili_cover_templates');
+                    if (saved) {
+                        try {
+                            const list = JSON.parse(saved);
+                            // 旧模板迁移: 将单 json 字段升级为 bilibili_json + douyin_json
+                            list.forEach(tpl => {
+                                if (tpl.json && !tpl.bilibili_json) {
+                                    tpl.bilibili_json = tpl.json;
+                                    tpl.douyin_json = { background: tpl.bgPreview || '#FFFFFF', objects: [] };
+                                    tpl.bgColor = tpl.bgPreview || '#FFFFFF';
+                                    tpl.bgImageUrl = tpl.bgImageUrl || null;
+                                    tpl.bgImageOpacity = tpl.bgImageOpacity ?? 1;
+                                    delete tpl.json;
+                                }
+                            });
+                            return list;
+                        } catch (e) { console.error(e); }
+                    }
+                    return [];
+                };
+
+                const templates = ref(loadStoredTemplates());
+
+                watch(templates, (newVal) => {
+                    localStorage.setItem('bilibili_cover_templates', JSON.stringify(newVal));
+                }, { deep: true });
+
+                const canGroup = computed(() => activeObject.value && activeObject.value.type === 'activeSelection');
+                const canUngroup = computed(() => activeObject.value && activeObject.value.type === 'group');
+
+                // 保存历史状态到当前平台栈
+                const saveHistoryState = () => {
+                    const c = currentCanvas.value;
+                    if (isProcessingHistory.value || !c) return;
+                    const json = c.toJSON(['isBackgroundImage', 'isGlassCard']);
+                    if (json.objects) {
+                        json.objects = json.objects.filter(obj => obj.isGuideLine !== true && obj.isBackgroundImage !== true);
+                    }
+                    currentUndoStack.value.push(JSON.stringify(json));
+                    // 清空当前平台的 redo 栈
+                    currentRedoStack.value.length = 0;
+                };
+
+                // 自动保存当前画布到模板对应平台的 json 字段
+                const autoSaveTemplate = () => {
+                    const c = currentCanvas.value;
+                    if (isProcessingHistory.value || !c || !currentTemplateId.value) return;
+                    const currentTpl = templates.value.find(t => t.id === currentTemplateId.value);
+                    if (!currentTpl) return;
+                    const json = c.toJSON(['isBackgroundImage', 'isGlassCard']);
+                    if (json.objects) {
+                        json.objects = json.objects.filter(obj => obj.isGuideLine !== true && obj.isBackgroundImage !== true);
+                    }
+                    currentTpl[`${activePlatform.value}_json`] = json;
+                    // 共享背景字段 (两个画布同步)
+                    currentTpl.bgPreview = canvasBg.value || '#FFFFFF';
+                    currentTpl.bgColor = canvasBg.value || '#FFFFFF';
+                    currentTpl.bgImageUrl = sharedBgImageUrl.value;
+                    currentTpl.bgImageOpacity = bgOpacity.value;
+                    currentTpl.bgFitMode = bgFitMode.value;
+                };
+
+                // 清除指定平台画布的背景图 (默认当前平台)
+                const clearExistingBgImages = (platform) => {
+                    const p = platform || activePlatform.value;
+                    const c = canvases.value[p];
+                    if (!c) return;
+                    const existing = c.getObjects().filter(obj => obj.isBackgroundImage);
+                    existing.forEach(obj => c.remove(obj));
+                    canvasBackgroundImages.value[p] = null;
+                    if (p === activePlatform.value) {
+                        // 仅清除共享 URL (避免误清另一画布)
+                    }
+                };
+
+                const undo = () => {
+                    const c = currentCanvas.value;
+                    if (!canUndo.value || !c) return;
+                    isProcessingHistory.value = true;
+                    const prevJson = currentUndoStack.value.pop();
+                    // 当前状态压入 redo
+                    const currentJson = c.toJSON(['isBackgroundImage', 'isGlassCard']);
+                    if (currentJson.objects) {
+                        currentJson.objects = currentJson.objects.filter(o => o.isGuideLine !== true && o.isBackgroundImage !== true);
+                    }
+                    currentRedoStack.value.push(JSON.stringify(currentJson));
+                    // 恢复前一个状态 (保留背景图)
+                    const bgImg = canvasBackgroundImages.value[activePlatform.value];
+                    c.loadFromJSON(prevJson, () => {
+                        if (bgImg) {
+                            c.add(bgImg);
+                            c.sendToBack(bgImg);
+                        }
+                        c.discardActiveObject();
+                        c.renderAll();
+                        isProcessingHistory.value = false;
+                        autoSaveTemplate();
+                    });
+                };
+
+                const redo = () => {
+                    const c = currentCanvas.value;
+                    if (!canRedo.value || !c) return;
+                    isProcessingHistory.value = true;
+                    const nextJson = currentRedoStack.value.pop();
+                    const currentJson = c.toJSON(['isBackgroundImage', 'isGlassCard']);
+                    if (currentJson.objects) {
+                        currentJson.objects = currentJson.objects.filter(o => o.isGuideLine !== true && o.isBackgroundImage !== true);
+                    }
+                    currentUndoStack.value.push(JSON.stringify(currentJson));
+                    const bgImg = canvasBackgroundImages.value[activePlatform.value];
+                    c.loadFromJSON(nextJson, () => {
+                        if (bgImg) {
+                            c.add(bgImg);
+                            c.sendToBack(bgImg);
+                        }
+                        c.discardActiveObject();
+                        c.renderAll();
+                        isProcessingHistory.value = false;
+                        autoSaveTemplate();
+                    });
+                };
+
+                // 同时计算两个画布的缩放 (横竖屏比例不同)
+                const handleResize = () => {
+                    if (!mainArea.value) return;
+                    const availableW = mainArea.value.clientWidth - 40;
+                    const availableH = mainArea.value.clientHeight - 140;
+                    // B站 1920×1080 横屏
+                    bilibiliScale.value = Math.min(availableW / 1920, availableH / 1080, 0.75);
+                    // 抖音 1080×1920 竖屏 (竖屏高度更受限, 上限调小到 0.45)
+                    douyinScale.value = Math.min(availableW / 1080, availableH / 1920, 0.45);
+                };
+
+                // 复制功能 (当前画布)
+                const copyActiveObject = () => {
+                    const c = currentCanvas.value;
+                    if (!c) return;
+                    const active = c.getActiveObject();
+                    if (!active || active.isBackgroundImage || active.isGuideLine) return;
+                    active.clone((cloned) => {
+                        clipboard.value = cloned;
+                    });
+                };
+
+                // 粘贴功能 (粘贴到当前画布)
+                const pasteObject = () => {
+                    const c = currentCanvas.value;
+                    if (!clipboard.value || !c) return;
+                    clipboard.value.clone((cloned) => {
+                        c.discardActiveObject();
+                        cloned.set({
+                            left: cloned.left + 30,
+                            top: cloned.top + 30,
+                            evented: true,
+                        });
+                        if (cloned.type === 'activeSelection') {
+                            cloned.canvas = c;
+                            cloned.forEachObject((obj) => c.add(obj));
+                            cloned.setCoords();
+                        } else {
+                            c.add(cloned);
+                        }
+                        c.setActiveObject(cloned);
+                        c.requestRenderAll();
+                        saveHistoryState();
+                        autoSaveTemplate();
+                    });
+                };
+
+                const handleKeyDown = (e) => {
+                    const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+                    if (activeTag === 'input' || activeTag === 'textarea') return;
+                    const c = currentCanvas.value;
+                    if (c && c.getActiveObject() && c.getActiveObject().isEditing) return;
+
+                    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                    const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+
+                    if (e.key === 'Delete' || e.key === 'Backspace') {
+                        deleteObject();
+                        e.preventDefault();
+                    }
+
+                    if (ctrlOrCmd && e.key.toLowerCase() === 'c') {
+                        copyActiveObject();
+                        e.preventDefault();
+                    }
+
+                    if (ctrlOrCmd && e.key.toLowerCase() === 'v') {
+                        pasteObject();
+                        e.preventDefault();
+                    }
+
+                    if (ctrlOrCmd && (e.key === 'g' || e.key === 'G')) {
+                        if (e.shiftKey) ungroupObjects(); else groupObjects();
+                        e.preventDefault();
+                    }
+                };
+
+                // 初始化单个 fabric.Canvas 实例 (B站/抖音共用)
+                const initCanvasInstance = (platform, dims) => {
+                    const c = new fabric.Canvas(`${platform}Canvas`, {
+                        width: dims.w,
+                        height: dims.h,
+                        backgroundColor: canvasBg.value,
+                        preserveObjectStacking: true
+                    });
+                    c.on('selection:created', handleSelection);
+                    c.on('selection:updated', handleSelection);
+                    c.on('selection:cleared', () => {
+                        // 仅当选区清空来自当前平台时才清空 activeObject, 并切换到背景配置
+                        if (activePlatform.value === platform) {
+                            activeObject.value = null;
+                            activeTab.value = 'background';
+                        }
+                    });
+                    c.on('object:added', () => {
+                        if (activePlatform.value === platform) saveHistoryState();
+                    });
+                    c.on('object:removed', () => {
+                        if (activePlatform.value === platform) saveHistoryState();
+                    });
+                    c.on('object:modified', () => {
+                        if (activePlatform.value === platform) {
+                            saveHistoryState();
+                            autoSaveTemplate();
+                        }
+                    });
+                    canvases.value[platform] = c;
+                };
+
+                onMounted(() => {
+                    handleResize();
+                    window.addEventListener('resize', handleResize);
+                    window.addEventListener('keydown', handleKeyDown);
+                    fetchCategories();
+
+                    fabric.Object.prototype.set({
+                        transparentCorners: false,
+                        cornerColor: '#ffffff',
+                        cornerStrokeColor: '#0071e3',
+                        borderColor: '#0071e3',
+                        cornerSize: 18,
+                        padding: 8,
+                        cornerStyle: 'circle',
+                        borderDashArray: [4, 4]
+                    });
+
+                    // 同时初始化两个画布 (B站横屏 + 抖音竖屏)
+                    initCanvasInstance('bilibili', CANVAS_DIMS.bilibili);
+                    initCanvasInstance('douyin', CANVAS_DIMS.douyin);
+
+                    if (templates.value.length > 0) {
+                        loadTemplate(templates.value[0]);
+                    }
+                });
+
+                onUnmounted(() => {
+                    window.removeEventListener('resize', handleResize);
+                    window.removeEventListener('keydown', handleKeyDown);
+                    // 释放两个 fabric 实例
+                    Object.values(canvases.value).forEach(c => c && c.dispose && c.dispose());
+                });
+
+                // 加载模板到两个画布 (B站 + 抖音)
+                const loadTemplate = (tpl) => {
+                    currentTemplateId.value = tpl.id;
+                    isProcessingHistory.value = true;
+
+                    // 共享背景状态恢复
+                    canvasBg.value = tpl.bgColor || tpl.bgPreview || '#FFFFFF';
+                    bgOpacity.value = tpl.bgImageOpacity ?? 1;
+                    sharedBgImageUrl.value = tpl.bgImageUrl || null;
+                    bgFitMode.value = tpl.bgFitMode || 'stretch';
+
+                    // 清空两个画布的历史栈
+                    undoStacks.bilibili.length = 0;
+                    undoStacks.douyin.length = 0;
+                    redoStacks.bilibili.length = 0;
+                    redoStacks.douyin.length = 0;
+
+                    // 用计数器等待两个画布 + 背景图全部加载完成
+                    let pendingLoads = 2;
+                    const onPlatformLoaded = () => {
+                        pendingLoads--;
+                        if (pendingLoads === 0) {
+                            // 两个画布 JSON 加载完成, 再加载共享背景图
+                            if (tpl.bgImageUrl) {
+                                applyBackgroundToBoth(tpl.bgImageUrl, tpl.bgImageOpacity ?? 1);
+                            }
+                            // 背景图加载是异步的, 但 isProcessingHistory 已保护历史栈
+                            // 稍后复位 (给背景图一点加载时间)
+                            setTimeout(() => {
+                                isProcessingHistory.value = false;
+                                // 为两个画布各保存一个初始历史状态
+                                ['bilibili', 'douyin'].forEach(p => {
+                                    const c = canvases.value[p];
+                                    if (!c) return;
+                                    const json = c.toJSON(['isBackgroundImage', 'isGlassCard']);
+                                    if (json.objects) {
+                                        json.objects = json.objects.filter(o => o.isGuideLine !== true && o.isBackgroundImage !== true);
+                                    }
+                                    undoStacks[p] = [JSON.stringify(json)];
+                                    redoStacks[p] = [];
+                                });
+                            }, 200);
+                        }
+                    };
+
+                    // 加载单个画布的 JSON
+                    const loadPlatform = (platform) => {
+                        const c = canvases.value[platform];
+                        if (!c) { onPlatformLoaded(); return; }
+                        const json = tpl[`${platform}_json`] || { background: canvasBg.value, objects: [] };
+                        clearExistingBgImages(platform);
+                        c.loadFromJSON(json, () => {
+                            c.setBackgroundColor(canvasBg.value, c.renderAll.bind(c));
+                            c.discardActiveObject();
+                            c.renderAll();
+                            onPlatformLoaded();
+                        });
+                    };
+
+                    loadPlatform('bilibili');
+                    loadPlatform('douyin');
+                };
+
+                const createEmptyTemplate = () => {
+                    const newId = Date.now();
+                    const emptyTpl = {
+                        id: newId,
+                        name: `空白模板 ${templates.value.length + 1}`,
+                        bgPreview: '#FFFFFF',
+                        bgColor: '#FFFFFF',
+                        bgImageUrl: null,
+                        bgImageOpacity: 1,
+                        bilibili_json: { background: "#FFFFFF", objects: [] },
+                        douyin_json: { background: "#FFFFFF", objects: [] }
+                    };
+                    templates.value.push(emptyTpl);
+                    loadTemplate(emptyTpl);
+                };
+
+                const deleteTemplate = (index) => {
+                    if (templates.value.length <= 1) {
+                        alert("请至少保留一个模板！");
+                        return;
+                    }
+                    templates.value.splice(index, 1);
+                };
+
+                // ===== 平台切换 =====
+                const switchPlatform = (platform) => {
+                    if (platform === activePlatform.value) return;
+                    activeObject.value = null;
+                    activePlatform.value = platform;
+                    // 切换后必须重新渲染 (display:none 期间未渲染)
+                    nextTick(() => {
+                        const c = canvases.value[platform];
+                        if (c) {
+                            c.renderAll();
+                            c.discardActiveObject();
+                        }
+                    });
+                };
+
+                // ===== 背景同步到两个画布 =====
+                // 根据适配模式计算背景图的 scale 与居中位置
+                // stretch: 拉伸填满 (可能变形) | contain: 原比例完整显示 (留白) | cover: 原比例覆盖 (裁剪)
+                const calcBgImgProps = (imgWidth, imgHeight, dims, mode) => {
+                    let scaleX, scaleY, left = 0, top = 0;
+                    if (mode === 'stretch') {
+                        scaleX = dims.w / imgWidth;
+                        scaleY = dims.h / imgHeight;
+                    } else if (mode === 'contain') {
+                        const scale = Math.min(dims.w / imgWidth, dims.h / imgHeight);
+                        scaleX = scaleY = scale;
+                        left = (dims.w - imgWidth * scale) / 2;
+                        top = (dims.h - imgHeight * scale) / 2;
+                    } else { // cover
+                        const scale = Math.max(dims.w / imgWidth, dims.h / imgHeight);
+                        scaleX = scaleY = scale;
+                        left = (dims.w - imgWidth * scale) / 2;
+                        top = (dims.h - imgHeight * scale) / 2;
+                    }
+                    return { scaleX, scaleY, left, top };
+                };
+
+                // imgUrl: 图片 URL 或 dataURL
+                // opacity: 可选, 指定加载时的透明度 (用于 loadTemplate 恢复)
+                const applyBackgroundToBoth = (imgUrl, opacity) => {
+                    sharedBgImageUrl.value = imgUrl;
+                    if (opacity !== undefined) bgOpacity.value = opacity;
+
+                    ['bilibili', 'douyin'].forEach(platform => {
+                        fabric.Image.fromURL(imgUrl, (fabricImg) => {
+                            const c = canvases.value[platform];
+                            if (!c) return;
+                            const dims = CANVAS_DIMS[platform];
+                            // 清除该画布旧背景
+                            const existing = c.getObjects().filter(o => o.isBackgroundImage);
+                            existing.forEach(o => c.remove(o));
+                            const fit = calcBgImgProps(fabricImg.width, fabricImg.height, dims, bgFitMode.value);
+                            fabricImg.set({
+                                left: fit.left, top: fit.top,
+                                scaleX: fit.scaleX, scaleY: fit.scaleY,
+                                selectable: false, evented: false,
+                                isBackgroundImage: true,
+                                opacity: bgOpacity.value
+                            });
+                            canvasBackgroundImages.value[platform] = fabricImg;
+                            c.add(fabricImg);
+                            c.sendToBack(fabricImg);
+                            c.renderAll();
+                        }, { crossOrigin: 'anonymous' });
+                    });
+                    saveHistoryState();
+                    autoSaveTemplate();
+                };
+
+                // 切换背景适配模式后, 重新应用背景图到两个画布
+                const setBgFitMode = (mode) => {
+                    bgFitMode.value = mode;
+                    if (!sharedBgImageUrl.value) return;
+                    // 仅更新现有背景图的 scale/位置, 不重新加载图片
+                    ['bilibili', 'douyin'].forEach(platform => {
+                        const fabricImg = canvasBackgroundImages.value[platform];
+                        const c = canvases.value[platform];
+                        if (!fabricImg || !c) return;
+                        const dims = CANVAS_DIMS[platform];
+                        const fit = calcBgImgProps(fabricImg.width, fabricImg.height, dims, mode);
+                        fabricImg.set({
+                            left: fit.left, top: fit.top,
+                            scaleX: fit.scaleX, scaleY: fit.scaleY
+                        });
+                        c.renderAll();
+                    });
+                    autoSaveTemplate();
+                };
+
+                // 应用公共背景图 (同步两个画布)
+                const applyPublicBackground = (bgUrl) => {
+                    applyBackgroundToBoth(bgUrl);
+                };
+
+                const groupObjects = () => {
+                    const c = currentCanvas.value;
+                    if (!c) return;
+                    const activeObj = c.getActiveObject();
+                    if (!activeObj || activeObj.type !== 'activeSelection') return;
+                    activeObj.toGroup();
+                    c.requestRenderAll();
+                    handleSelection({ selected: [c.getActiveObject()] });
+                    saveHistoryState();
+                    autoSaveTemplate();
+                };
+
+                const ungroupObjects = () => {
+                    const c = currentCanvas.value;
+                    if (!c) return;
+                    const activeObj = c.getActiveObject();
+                    if (!activeObj || activeObj.type !== 'group') return;
+                    activeObj.toActiveSelection();
+                    c.requestRenderAll();
+                    handleSelection({ selected: [c.getActiveObject()] });
+                    saveHistoryState();
+                    autoSaveTemplate();
+                };
+
+                const handleSelection = (e) => {
+                    const c = currentCanvas.value;
+                    const obj = e.selected ? e.selected[0] : (c ? c.getActiveObject() : null);
+                    if (!obj || obj.isGuideLine || obj.isBackgroundImage) {
+                        activeObject.value = null;
+                        return;
+                    }
+                    activeObject.value = obj;
+                    isText.value = obj.type === 'i-text' || obj.type === 'text';
+                    isImage.value = obj.type === 'image';
+                    isGlassCard.value = !!obj.isGlassCard;
+                    hasColor.value = !isImage.value && obj.type !== 'group' && !isGlassCard.value;
+
+                    activeProps.fill = obj.fill || obj.stroke || '#FEC000';
+                    activeProps.opacity = obj.opacity ?? 1;
+                    if (isText.value) {
+                        activeProps.fontSize = obj.fontSize || 192;
+                        activeProps.textValue = obj.text || '';
+                    }
+                    if (isGlassCard.value) {
+                        glassProps.fill = obj.fill || 'rgba(255, 255, 255, 0.25)';
+                        glassProps.stroke = obj.stroke || 'rgba(255, 255, 255, 0.5)';
+                    }
+                };
+
+                // 画布背景色同步到两个画布
+                const updateCanvasBg = () => {
+                    ['bilibili', 'douyin'].forEach(platform => {
+                        const c = canvases.value[platform];
+                        if (c) c.setBackgroundColor(canvasBg.value, c.renderAll.bind(c));
+                    });
+                    saveHistoryState();
+                    autoSaveTemplate();
+                };
+
+                // 背景图透明度同步到两个画布
+                const updateBgOpacity = () => {
+                    ['bilibili', 'douyin'].forEach(platform => {
+                        const bgImg = canvasBackgroundImages.value[platform];
+                        const c = canvases.value[platform];
+                        if (bgImg && c) {
+                            bgImg.set('opacity', bgOpacity.value);
+                            c.renderAll();
+                        }
+                    });
+                    autoSaveTemplate();
+                };
+
+                const updateActiveProp = (prop) => {
+                    if (!activeObject.value) return;
+                    let val = activeProps[prop];
+                    if (prop === 'fontSize' || prop === 'opacity') val = Number(val);
+                    activeObject.value.set(prop, val);
+                    currentCanvas.value?.requestRenderAll();
+                    autoSaveTemplate();
+                };
+
+                const updateTextContent = () => {
+                    if (!activeObject.value || !isText.value) return;
+                    activeObject.value.set('text', activeProps.textValue);
+                    currentCanvas.value?.requestRenderAll();
+                    autoSaveTemplate();
+                };
+
+                const applyHotTitle = (text) => {
+                    activeProps.textValue = text;
+                    updateTextContent();
+                };
+
+                const updateGlassProp = () => {
+                    if (!activeObject.value || !isGlassCard.value) return;
+                    activeObject.value.set({
+                        fill: glassProps.fill,
+                        stroke: glassProps.stroke
+                    });
+                    currentCanvas.value?.requestRenderAll();
+                    autoSaveTemplate();
+                };
+
+                const setPresetColor = (color) => {
+                    activeProps.fill = color;
+                    updateActiveProp('fill');
+                };
+
+                // ===== 添加组件 (按当前画布尺寸自适应位置) =====
+                // 添加矩形色块 (可自由拉伸, 走普通图形属性面板)
+                const addGlassCard = () => {
+                    const dims = CANVAS_DIMS[activePlatform.value];
+                    const w = Math.min(600, dims.w * 0.5);
+                    const h = Math.min(320, dims.h * 0.3);
+                    const rect = new fabric.Rect({
+                        left: (dims.w - w) / 2, top: (dims.h - h) / 2,
+                        width: w, height: h,
+                        fill: 'rgba(255, 255, 255, 0.2)',
+                        stroke: 'rgba(255, 255, 255, 0.6)',
+                        strokeWidth: 2,
+                        rx: 24, ry: 24
+                        // 不再设置 isGlassCard: true, 走普通图形的"填充颜色"配置, 支持自由拉伸
+                    });
+                    currentCanvas.value.add(rect);
+                    currentCanvas.value.setActiveObject(rect);
+                    autoSaveTemplate();
+                };
+
+                const addText = () => {
+                    const dims = CANVAS_DIMS[activePlatform.value];
+                    // 抖音画布更窄, 字号默认小一些
+                    const fontSize = activePlatform.value === 'douyin' ? 120 : 192;
+                    const text = new fabric.IText('输入爆款标题', {
+                        left: dims.w * 0.1, top: dims.h * 0.4,
+                        fontFamily: '-apple-system',
+                        fill: '#FEC000',
+                        fontSize: fontSize,
+                        fontWeight: 'bold'
+                    });
+                    currentCanvas.value.add(text);
+                    currentCanvas.value.setActiveObject(text);
+                    autoSaveTemplate();
+                };
+
+                const addLine = () => {
+                    const dims = CANVAS_DIMS[activePlatform.value];
+                    const lineLen = Math.min(600, dims.w * 0.5);
+                    const line = new fabric.Line([0, 0, lineLen, 0], {
+                        left: dims.w * 0.1, top: dims.h * 0.55,
+                        stroke: '#00C0FF',
+                        strokeWidth: 10,
+                        strokeLineCap: 'round'
+                    });
+                    currentCanvas.value.add(line);
+                    currentCanvas.value.setActiveObject(line);
+                };
+
+                const addShape = () => {
+                    const dims = CANVAS_DIMS[activePlatform.value];
+                    const rect = new fabric.Rect({
+                        left: dims.w * 0.1, top: dims.h * 0.35,
+                        width: 320, height: 180,
+                        fill: '#FEC000',
+                        rx: 16, ry: 16
+                    });
+                    currentCanvas.value.add(rect);
+                    currentCanvas.value.setActiveObject(rect);
+                };
+
+                const addIcon = () => {
+                    const dims = CANVAS_DIMS[activePlatform.value];
+                    const starPath = "M 12 2 L 15.09 8.26 L 22 9.27 L 17 14.14 L 18.18 21.02 L 12 17.77 L 5.82 21.02 L 7 14.14 L 2 9.27 L 8.91 8.26 Z";
+                    const icon = new fabric.Path(starPath, {
+                        left: dims.w * 0.15, top: dims.h * 0.35,
+                        fill: '#0071e3',
+                        scaleX: 6, scaleY: 6
+                    });
+                    currentCanvas.value.add(icon);
+                    currentCanvas.value.setActiveObject(icon);
+                };
+
+                const triggerImageUpload = () => imageInput.value.click();
+                const handleImageUpload = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (f) => {
+                        fabric.Image.fromURL(f.target.result, (img) => {
+                            const dims = CANVAS_DIMS[activePlatform.value];
+                            img.scaleToWidth(Math.min(600, dims.w * 0.5));
+                            img.set({ left: dims.w * 0.15, top: dims.h * 0.25 });
+                            currentCanvas.value.add(img);
+                            currentCanvas.value.setActiveObject(img);
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                    e.target.value = '';
+                };
+
+                const triggerReplaceImage = () => replaceImgInput.value.click();
+                const handleReplaceImage = (e) => {
+                    const file = e.target.files[0];
+                    if (!file || !activeObject.value) return;
+                    const reader = new FileReader();
+                    reader.onload = (f) => {
+                        fabric.Image.fromURL(f.target.result, (newImg) => {
+                            const activeObj = activeObject.value;
+                            newImg.set({
+                                left: activeObj.left, top: activeObj.top,
+                                scaleX: activeObj.scaleX, scaleY: activeObj.scaleY,
+                                angle: activeObj.angle, opacity: activeObj.opacity
+                            });
+                            currentCanvas.value.remove(activeObj);
+                            currentCanvas.value.add(newImg);
+                            currentCanvas.value.setActiveObject(newImg);
+                            saveHistoryState();
+                            autoSaveTemplate();
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                    e.target.value = '';
+                };
+
+                const triggerBgUpload = () => bgInput.value.click();
+                const handleBgUpload = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (f) => {
+                        // 上传自定义背景图, 同步到两个画布
+                        applyBackgroundToBoth(f.target.result, 1);
+                    };
+                    reader.readAsDataURL(file);
+                    e.target.value = '';
+                };
+
+                const bringToFront = () => {
+                    const c = currentCanvas.value;
+                    if (activeObject.value && !activeObject.value.isBackgroundImage) {
+                        activeObject.value.bringToFront();
+                        const bgImg = canvasBackgroundImages.value[activePlatform.value];
+                        if (bgImg) bgImg.sendToBack();
+                        saveHistoryState();
+                        autoSaveTemplate();
+                    }
+                };
+
+                const sendToBack = () => {
+                    const c = currentCanvas.value;
+                    if (activeObject.value && !activeObject.value.isBackgroundImage) {
+                        activeObject.value.sendToBack();
+                        const bgImg = canvasBackgroundImages.value[activePlatform.value];
+                        if (bgImg) bgImg.sendToBack();
+                        saveHistoryState();
+                        autoSaveTemplate();
+                    }
+                };
+
+                const deleteObject = () => {
+                    const c = currentCanvas.value;
+                    if (!c) return;
+                    const active = c.getActiveObjects();
+                    if (active && active.length) {
+                        active.forEach(obj => {
+                            if (!obj.isGuideLine && !obj.isBackgroundImage) c.remove(obj);
+                        });
+                        c.discardActiveObject();
+                        activeObject.value = null;
+                        c.requestRenderAll();
+                        saveHistoryState();
+                        autoSaveTemplate();
+                    }
+                };
+
+                // ===== 导出功能 =====
+                // 通用导出: 隐藏警戒线后导出指定画布
+                const exportCanvasToFile = (canvasInstance, filename) => {
+                    if (!canvasInstance) return;
+                    canvasInstance.discardActiveObject();
+                    // 警戒线是 DOM 元素, 不在 fabric canvas 内, 无需隐藏
+                    // 但若有 isGuideLine/isSafetyGuide 的 fabric 对象也一并隐藏
+                    const guides = canvasInstance.getObjects().filter(o => o.isGuideLine || o.isSafetyGuide);
+                    guides.forEach(g => g.set('visible', false));
+                    canvasInstance.renderAll();
+                    const dataURL = canvasInstance.toDataURL({ format: 'png', multiplier: 1 });
+                    guides.forEach(g => g.set('visible', true));
+                    canvasInstance.renderAll();
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = dataURL;
+                    link.click();
+                };
+
+                // 导出当前激活平台的封面
+                const exportCurrent = () => {
+                    const plat = activePlatform.value;
+                    exportCanvasToFile(canvases.value[plat], `${plat}.png`);
+                };
+
+                // 同时导出 B站 + 抖音 两个封面
+                const exportBoth = async () => {
+                    if (canvases.value.bilibili) {
+                        exportCanvasToFile(canvases.value.bilibili, 'bilibili.png');
+                    }
+                    // 间隔 300ms 避免浏览器拦截连续下载
+                    await new Promise(r => setTimeout(r, 300));
+                    if (canvases.value.douyin) {
+                        exportCanvasToFile(canvases.value.douyin, 'douyin.png');
+                    }
+                };
+
+                return {
+                    mainArea, activePlatform, bilibiliScale, douyinScale, activeTab,
+                    templates, currentTemplateId,
+                    canvasBg, bgOpacity, sharedBgImageUrl, bgFitMode,
+                    activeObject, isText, isImage, isGlassCard, hasColor,
+                    fillPresetColors, activeProps, glassProps, hotTitles,
+                    canGroup, canUngroup, canUndo, canRedo,
+                    publicBackgrounds, loadingBackgrounds, categories, selectedCategory,
+                    imageInput, bgInput, replaceImgInput,
+                    switchPlatform, loadTemplate, createEmptyTemplate, deleteTemplate, applyPublicBackground,
+                    groupObjects, ungroupObjects, undo, redo,
+                    updateCanvasBg, updateBgOpacity, updateActiveProp, updateTextContent,
+                    applyHotTitle, updateGlassProp, setPresetColor,
+                    addGlassCard, addText, addLine, addShape, addIcon, deleteObject,
+                    bringToFront, sendToBack,
+                    triggerImageUpload, handleImageUpload, triggerBgUpload, handleBgUpload,
+                    triggerReplaceImage, handleReplaceImage,
+                    exportCurrent, exportBoth,
+                    fetchPublicBackgrounds, filterByCategory,
+                    showHotTitles, setBgFitMode
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
