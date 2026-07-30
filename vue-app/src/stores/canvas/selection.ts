@@ -37,6 +37,7 @@ export function useCanvasSelection(state: CanvasState, history: CanvasHistory) {
 
     activeProps.fill = obj.fill || obj.stroke || '#FEC000';
     activeProps.opacity = obj.opacity ?? 1;
+    activeProps.angle = obj.angle ?? 0;
     if (isText.value) {
       activeProps.fontSize = obj.fontSize || 192;
       activeProps.textValue = obj.text || '';

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-// ===== 顶部栏: 平台切换 (B站/抖音) + 撤销重做 + 导出按钮 =====
-import { useCanvasStore } from '@/stores/canvas'
+// ===== 顶部栏: 平台切换 (左) + 撤销重做与吸附开关 (中, 屏幕水平居中) + 导出按钮 (右) =====
+import { useCanvasStore } from '@/stores/canvas';
 
-const canvasStore = useCanvasStore()
+const canvasStore = useCanvasStore();
 </script>
 
 <template>
   <div class="top-bar">
-    <!-- 平台切换分段控制器 -->
+    <!-- 左: 平台切换分段控制器 -->
     <div class="platform-segmented glass-panel">
       <button
         class="platform-seg-btn"
@@ -27,8 +27,8 @@ const canvasStore = useCanvasStore()
       </button>
     </div>
 
-    <div class="top-bar-right">
-      <!-- 撤销 / 反撤销 -->
+    <!-- 中: 撤销 / 反撤销 / 吸附开关 (绝对定位水平居中) -->
+    <div class="top-bar-center">
       <div class="history-toolbar glass-panel">
         <button
           class="tool-btn icon-only"
@@ -46,8 +46,29 @@ const canvasStore = useCanvasStore()
         >
           <iconify-icon icon="lucide:redo-2" width="16"></iconify-icon>
         </button>
+        <span class="tool-divider"></span>
+        <button
+          class="tool-btn icon-only"
+          :class="{ 'is-active': canvasStore.snapEnabled }"
+          :title="
+            canvasStore.snapEnabled
+              ? '吸附已开启 (拖动时对齐边缘/中心)'
+              : '吸附已关闭'
+          "
+          @click="canvasStore.snapEnabled = !canvasStore.snapEnabled"
+        >
+          <iconify-icon icon="lucide:magnet" width="18"></iconify-icon>
+        </button>
       </div>
-      <button class="btn-apple" title="导出当前平台封面" @click="canvasStore.exportCurrent">
+    </div>
+
+    <!-- 右: 导出按钮 -->
+    <div class="top-bar-right">
+      <button
+        class="btn-apple"
+        title="导出当前平台封面"
+        @click="canvasStore.exportCurrent"
+      >
         导出当前
       </button>
       <button

@@ -3,15 +3,24 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useCanvasStore } from '@/stores/canvas'
 import { useResourceStore } from '@/stores/resource'
+import { useUiStore } from '@/stores/ui'
 
 export function useKeyboard(): void {
   const canvasStore = useCanvasStore()
   const resourceStore = useResourceStore()
+  const uiStore = useUiStore()
 
   function handleKeyDown(e: KeyboardEvent): void {
     // 资源管理器打开时, ESC 关闭
     if (resourceStore.resourceModalOpen && e.key === 'Escape') {
       resourceStore.closeResourceManager()
+      e.preventDefault()
+      return
+    }
+
+    // 爆款标题模态框打开时, ESC 关闭
+    if (uiStore.showHotTitles && e.key === 'Escape') {
+      uiStore.showHotTitles = false
       e.preventDefault()
       return
     }

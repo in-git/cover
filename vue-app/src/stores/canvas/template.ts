@@ -7,6 +7,7 @@ import { fabric } from '@/utils/fabric';
 import type { CanvasBackground } from './background';
 import type { CanvasHistory } from './history';
 import type { CanvasSelection } from './selection';
+import type { CanvasSnapping } from './snapping';
 import type { CanvasState } from './state';
 
 export function useCanvasTemplate(
@@ -14,6 +15,7 @@ export function useCanvasTemplate(
   history: CanvasHistory,
   background: CanvasBackground,
   selection: CanvasSelection,
+  snapping: CanvasSnapping,
 ) {
   const templateStore = useTemplateStore();
   const {
@@ -74,10 +76,13 @@ export function useCanvasTemplate(
         uiStore.setTab('background');
       }
     });
-    c.on('object:added', () => {
+    // 辅助线 (isGuideLine) 是临时对象, 不计入历史栈, 避免拖动时污染撤销
+    c.on('object:added', (e: any) => {
+      if (e?.target?.isGuideLine) return;
       if (activePlatform.value === platform) saveHistoryState();
     });
-    c.on('object:removed', () => {
+    c.on('object:removed', (e: any) => {
+      if (e?.target?.isGuideLine) return;
       if (activePlatform.value === platform) saveHistoryState();
     });
     c.on('object:modified', () => {
@@ -86,6 +91,8 @@ export function useCanvasTemplate(
         autoSaveTemplate();
       }
     });
+    // 挂载拖动吸附 (画布边缘/中心 + 其他组件边缘/中心)
+    snapping.attachSnapping(c, platform, dims);
     canvases.value[platform] = c;
   }
 

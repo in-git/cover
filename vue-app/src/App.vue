@@ -82,5 +82,8 @@ onUnmounted(() => {
 
     <!-- 资源管理器大屏模态框 -->
     <ResourceManager />
+
+    <!-- 爆款标题推荐模态框 -->
+    <HotTitleModal />
   </div>
 </template>

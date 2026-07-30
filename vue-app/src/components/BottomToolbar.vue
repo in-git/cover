@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // ===== 底部悬浮工具栏: 添加文字 / 分割线 / 色块 =====
+// 吸附开关已移至顶部居中工具栏 (与撤销/重做同组, 见 TopBar.vue)
 // 图片组件改为拖拽图片到画布生成 (见 CanvasStage), 不再提供按钮上传
 import { useCanvasStore } from '@/stores/canvas';
 

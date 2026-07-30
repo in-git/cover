@@ -70,4 +70,6 @@ export interface ActiveProps {
   textValue: string;
   /** 当前文字字体 family (用于字体选择器高亮当前项) */
   fontFamily: string;
+  /** 旋转角度 (0-360, 对所有组件生效) */
+  angle: number;
 }

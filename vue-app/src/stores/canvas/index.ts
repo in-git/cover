@@ -10,6 +10,7 @@ import { useCanvasExport } from './export';
 import { useCanvasHistory } from './history';
 import { useCanvasObjects } from './objects';
 import { useCanvasSelection } from './selection';
+import { useCanvasSnapping } from './snapping';
 import { useCanvasState } from './state';
 import { useCanvasTemplate } from './template';
 
@@ -24,8 +25,16 @@ export const useCanvasStore = defineStore('canvas', () => {
   const background = useCanvasBackground(state, history);
   // 组件层: 添加组件 + 属性更新 + 字体应用
   const objects = useCanvasObjects(state, history);
-  // 模板层: 画布初始化 + 模板加载 (依赖 background + selection)
-  const template = useCanvasTemplate(state, history, background, selection);
+  // 吸附层: 拖动吸附 + 辅助线 (在模板层之前, 供 initCanvasInstance 挂载)
+  const snapping = useCanvasSnapping();
+  // 模板层: 画布初始化 + 模板加载 (依赖 background + selection + snapping)
+  const template = useCanvasTemplate(
+    state,
+    history,
+    background,
+    selection,
+    snapping,
+  );
   // 导出层: PNG 导出 + 释放实例
   const exportMod = useCanvasExport(state);
 
@@ -40,6 +49,8 @@ export const useCanvasStore = defineStore('canvas', () => {
     ...background,
     // ===== 组件/属性/字体 =====
     ...objects,
+    // ===== 吸附 =====
+    ...snapping,
     // ===== 模板/画布初始化 =====
     ...template,
     // ===== 导出 =====
@@ -53,5 +64,6 @@ export type { CanvasExport } from './export';
 export type { CanvasHistory } from './history';
 export type { CanvasObjects } from './objects';
 export type { CanvasSelection } from './selection';
+export type { CanvasSnapping } from './snapping';
 export type { CanvasState, FabricCanvas, FabricObject } from './state';
 export type { CanvasTemplate } from './template';

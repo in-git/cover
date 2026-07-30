@@ -58,6 +58,7 @@ export function useCanvasState() {
     opacity: 1,
     textValue: '',
     fontFamily: '-apple-system',
+    angle: 0,
   });
 
   const fillPresetColors = FILL_PRESET_COLORS;

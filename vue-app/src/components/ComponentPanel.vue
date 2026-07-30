@@ -1,18 +1,14 @@
 <script setup lang="ts">
-// ===== 组件配置面板: 选中元素的编组/图层/填充/文字/字体/透明度/替换图片/删除 =====
+// ===== 组件配置面板: 选中元素的编组/图层/填充/文字/字体/角度/透明度/替换图片/删除 =====
 import { useCanvasStore } from '@/stores/canvas';
 import { useResourceStore } from '@/stores/resource';
 import { useUiStore } from '@/stores/ui';
-import { HOT_TITLES } from '@/utils/constants';
 import { fontPreviewFamily } from '@/utils/font';
-import type { SelectValue } from 'ant-design-vue/es/select';
 import { computed, ref } from 'vue';
 
 const canvasStore = useCanvasStore();
 const uiStore = useUiStore();
 const resourceStore = useResourceStore();
-
-const hotTitles = HOT_TITLES;
 
 // 替换图片上传 input (隐藏)
 const replaceImgInput = ref<HTMLInputElement | null>(null);
@@ -21,12 +17,7 @@ function triggerReplaceImage(): void {
   replaceImgInput.value?.click();
 }
 
-function applyHotTitleAndClose(text: string): void {
-  canvasStore.applyHotTitle(text);
-  uiStore.showHotTitles = false;
-}
-
-// ===== 字体选择器 (ant-design-vue Select) =====
+// ===== 字体网格 (2x2, 参照资源管理器展示) =====
 // 对接后端 /api/resources?category=fonts, 选项 = 系统默认 + 已上传字体列表
 interface FontOption {
   value: string;
@@ -46,14 +37,13 @@ const fontOptions = computed<FontOption[]>(() => {
 });
 
 /** 切换字体: 系统默认走 resetFontToSystem, 上传字体走 applyFontToActive */
-function onFontChange(value: SelectValue): void {
-  const v = value as string;
-  if (v === '-apple-system') {
+function onFontChange(value: string): void {
+  if (value === '-apple-system') {
     canvasStore.resetFontToSystem();
     return;
   }
   const font = resourceStore.resourceList.fonts.find(
-    (f) => fontPreviewFamily(f.name) === v,
+    (f) => fontPreviewFamily(f.name) === value,
   );
   if (font) canvasStore.applyFontToActive(font);
 }
@@ -63,42 +53,88 @@ function onFontChange(value: SelectValue): void {
   <div class="tab-panel">
     <!-- 选中元素的参数配置 -->
     <div v-if="canvasStore.activeObject">
-      <!-- 编组与图层 (纯图标一排) -->
+      <!-- 操作网格: 居中/编组/图层/删除 (图标在上, 文字在下, IconPark 图标库) -->
       <div class="prop-group">
-        <div class="btn-row icon-only-row">
-          <button
-            class="btn-secondary icon-only-btn"
-            :disabled="!canvasStore.canGroup"
-            title="编组"
-            @click="canvasStore.groupObjects"
-          >
-            <iconify-icon icon="lucide:group" width="15"></iconify-icon>
-          </button>
-          <button
-            class="btn-secondary icon-only-btn"
-            :disabled="!canvasStore.canUngroup"
-            title="取消编组"
-            @click="canvasStore.ungroupObjects"
-          >
-            <iconify-icon icon="lucide:ungroup" width="15"></iconify-icon>
-          </button>
-          <button
-            class="btn-secondary icon-only-btn"
-            title="移至顶层"
-            @click="canvasStore.bringToFront"
-          >
-            <iconify-icon
-              icon="lucide:bring-to-front"
-              width="15"
-            ></iconify-icon>
-          </button>
-          <button
-            class="btn-secondary icon-only-btn"
-            title="移至底层"
-            @click="canvasStore.sendToBack"
-          >
-            <iconify-icon icon="lucide:send-to-back" width="15"></iconify-icon>
-          </button>
+        <div class="action-grid">
+          <a-tooltip title="水平居中" placement="top">
+            <span class="tip-wrap">
+              <button class="action-cell" @click="canvasStore.centerObjectH">
+                <iconify-icon
+                  icon="icon-park:horizontally-centered"
+                  width="20"
+                ></iconify-icon>
+                <span>水平居中</span>
+              </button>
+            </span>
+          </a-tooltip>
+          <a-tooltip title="垂直居中" placement="top">
+            <span class="tip-wrap">
+              <button class="action-cell" @click="canvasStore.centerObjectV">
+                <iconify-icon
+                  icon="icon-park:vertically-centered"
+                  width="20"
+                ></iconify-icon>
+                <span>垂直居中</span>
+              </button>
+            </span>
+          </a-tooltip>
+          <a-tooltip title="编组" placement="top">
+            <span class="tip-wrap">
+              <button
+                class="action-cell"
+                :disabled="!canvasStore.canGroup"
+                @click="canvasStore.groupObjects"
+              >
+                <iconify-icon icon="icon-park:group" width="20"></iconify-icon>
+                <span>编组</span>
+              </button>
+            </span>
+          </a-tooltip>
+          <a-tooltip title="取消编组" placement="top">
+            <span class="tip-wrap">
+              <button
+                class="action-cell"
+                :disabled="!canvasStore.canUngroup"
+                @click="canvasStore.ungroupObjects"
+              >
+                <iconify-icon
+                  icon="icon-park:ungroup"
+                  width="20"
+                ></iconify-icon>
+                <span>取消编组</span>
+              </button>
+            </span>
+          </a-tooltip>
+          <a-tooltip title="移至顶层" placement="top">
+            <span class="tip-wrap">
+              <button class="action-cell" @click="canvasStore.bringToFront">
+                <iconify-icon icon="icon-park:to-top" width="20"></iconify-icon>
+                <span>移至顶层</span>
+              </button>
+            </span>
+          </a-tooltip>
+          <a-tooltip title="移至底层" placement="top">
+            <span class="tip-wrap">
+              <button class="action-cell" @click="canvasStore.sendToBack">
+                <iconify-icon
+                  icon="icon-park:to-bottom"
+                  width="20"
+                ></iconify-icon>
+                <span>移至底层</span>
+              </button>
+            </span>
+          </a-tooltip>
+          <a-tooltip title="删除选中元素 (Delete)" placement="top">
+            <span class="tip-wrap">
+              <button
+                class="action-cell danger"
+                @click="canvasStore.deleteObject"
+              >
+                <iconify-icon icon="icon-park:delete" width="20"></iconify-icon>
+                <span>删除</span>
+              </button>
+            </span>
+          </a-tooltip>
         </div>
       </div>
 
@@ -107,18 +143,28 @@ function onFontChange(value: SelectValue): void {
         <div class="prop-row">
           <span class="prop-label">填充颜色</span>
         </div>
-        <div class="color-picker-wrap">
+        <div class="color-picker-wrap justify-between">
+          <div class="flex items-center gap-2">
+            <input
+              type="color"
+              v-model="canvasStore.activeProps.fill"
+              @input="canvasStore.updateActiveProp('fill')"
+            />
+            <span class="color-hex">{{
+              canvasStore.activeProps.fill.toUpperCase()
+            }}</span>
+          </div>
           <input
-            type="color"
+            type="text"
             v-model="canvasStore.activeProps.fill"
-            @input="canvasStore.updateActiveProp('fill')"
+            class="w-[100px] border-none outline-none text-center py-1 rounded-md"
           />
-          <span class="color-hex">{{
-            canvasStore.activeProps.fill.toUpperCase()
-          }}</span>
         </div>
 
-        <div class="preset-colors-wrap" style="margin-top: 8px">
+        <div
+          class="preset-colors-wrap px-3 bg-gray-100 py-2 rounded-md"
+          style="margin-top: 8px"
+        >
           <div
             v-for="color in canvasStore.fillPresetColors"
             :key="color"
@@ -142,54 +188,39 @@ function onFontChange(value: SelectValue): void {
           placeholder="输入封面标题..."
           @input="canvasStore.updateTextContent"
         />
+        <button
+          class="hot-title-open-btn"
+          @click="uiStore.showHotTitles = true"
+          style="margin-top: 10px"
+        >
+          <iconify-icon icon="lucide:sparkles" width="14"></iconify-icon>
+          <span>展开爆款标题库</span>
+          <iconify-icon icon="lucide:chevron-right" width="14"></iconify-icon>
+        </button>
 
-        <!-- 字体选择 (ant-design-vue Select, 对接后端 /api/resources?category=fonts) -->
+        <!-- 字体选择 (2x2 网格, 参照资源管理器展示, 示例文本「字体」) -->
         <div class="prop-row" style="margin-top: 10px">
           <span class="prop-label">字体</span>
         </div>
-        <a-select
-          :value="canvasStore.activeProps.fontFamily"
-          style="width: 100%"
-          size="small"
-          :options="fontOptions"
-          placeholder="选择字体"
-          @change="onFontChange"
-        >
-          <template #option="{ fontFamily }">
-            <div
-              class="font-select-option"
-              :style="{
-                fontFamily: `${fontFamily}, -apple-system, sans-serif`,
-              }"
-            >
-              永不失联的爱 1234
-            </div>
-          </template>
-        </a-select>
-
-        <!-- 爆款标题列表 (popover 弹出) -->
-        <div class="prop-row" style="margin-top: 10px">
-          <span class="prop-label">🔥 爆款标题推荐</span>
-          <button class="hot-title-trigger" @click="uiStore.toggleHotTitles()">
-            {{ uiStore.showHotTitles ? '收起' : '展开' }}
-            <iconify-icon
-              :icon="
-                uiStore.showHotTitles
-                  ? 'lucide:chevron-up'
-                  : 'lucide:chevron-down'
-              "
-              width="12"
-            ></iconify-icon>
-          </button>
-        </div>
-        <div v-if="uiStore.showHotTitles" class="hot-title-popover">
+        <div class="cp-font-grid">
           <button
-            v-for="t in hotTitles"
-            :key="t"
-            class="hot-title-tag"
-            @click="applyHotTitleAndClose(t)"
+            v-for="opt in fontOptions"
+            :key="opt.value"
+            type="button"
+            class="cp-font-card"
+            :class="{
+              active: canvasStore.activeProps.fontFamily === opt.value,
+            }"
+            :title="opt.label"
+            @click="onFontChange(opt.value)"
           >
-            {{ t }}
+            <span
+              class="cp-font-sample"
+              :style="{
+                fontFamily: `${opt.fontFamily}, -apple-system, sans-serif`,
+              }"
+              >字体</span
+            >
           </button>
         </div>
 
@@ -206,6 +237,33 @@ function onFontChange(value: SelectValue): void {
           max="350"
           step="1"
           @input="canvasStore.updateActiveProp('fontSize')"
+        />
+      </div>
+
+      <!-- 旋转角度 (对所有组件生效) -->
+      <div class="prop-group">
+        <div class="prop-row">
+          <span class="prop-label">旋转角度</span>
+          <div class="angle-input-wrap">
+            <input
+              type="number"
+              class="angle-input"
+              v-model.number="canvasStore.activeProps.angle"
+              min="-360"
+              max="360"
+              step="1"
+              @input="canvasStore.updateActiveProp('angle')"
+            />
+            <span class="angle-unit">°</span>
+          </div>
+        </div>
+        <input
+          type="range"
+          v-model="canvasStore.activeProps.angle"
+          min="-180"
+          max="180"
+          step="1"
+          @input="canvasStore.updateActiveProp('angle')"
         />
       </div>
 
@@ -235,10 +293,6 @@ function onFontChange(value: SelectValue): void {
           </button>
         </div>
       </div>
-
-      <button class="btn-danger-light" @click="canvasStore.deleteObject">
-        删除选中元素 (Delete)
-      </button>
     </div>
 
     <div

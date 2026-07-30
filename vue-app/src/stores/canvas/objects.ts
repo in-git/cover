@@ -15,8 +15,10 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
   function updateActiveProp(prop: keyof ActiveProps): void {
     if (!activeObject.value) return;
     let val: any = activeProps[prop];
-    if (prop === 'fontSize' || prop === 'opacity') val = Number(val);
+    if (prop === 'fontSize' || prop === 'opacity' || prop === 'angle')
+      val = Number(val);
     activeObject.value.set(prop, val);
+    activeObject.value.setCoords();
     currentCanvas.value?.requestRenderAll();
     autoSaveTemplate();
   }
@@ -192,6 +194,30 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
     }
   }
 
+  // ===== 居中对齐 (基于 fabric canvas 逻辑尺寸 1920×1080 / 1080×1920) =====
+  // fabric 的 centerH/centerV 会自动处理 originX/originY, scale 由 CSS transform 控制, 不影响坐标
+  function centerObjectH(): void {
+    const obj = activeObject.value;
+    const c = currentCanvas.value;
+    if (!obj || !c) return;
+    obj.centerH();
+    obj.setCoords();
+    c.requestRenderAll();
+    saveHistoryState();
+    autoSaveTemplate();
+  }
+
+  function centerObjectV(): void {
+    const obj = activeObject.value;
+    const c = currentCanvas.value;
+    if (!obj || !c) return;
+    obj.centerV();
+    obj.setCoords();
+    c.requestRenderAll();
+    saveHistoryState();
+    autoSaveTemplate();
+  }
+
   return {
     updateActiveProp,
     updateTextContent,
@@ -205,6 +231,8 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
     applyFontToActive,
     resetFontToSystem,
     applyFontResource,
+    centerObjectH,
+    centerObjectV,
   };
 }
 

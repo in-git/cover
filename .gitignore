@@ -3,7 +3,7 @@ node_modules/
 .pnpm-store/
 .yarn/
 .jspm-packages/
-
+dist/
 # ============== 构建产物 / Build output ==============
 # 注意: vue-app/dist/ 不排除 —— 它是 server.py (Flask) 启动时托管的前端入口, 需纳入版本控制
 build/

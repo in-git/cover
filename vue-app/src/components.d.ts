@@ -7,11 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    ASelect: typeof import('ant-design-vue/es')['Select']
+    ATooltip: typeof import('ant-design-vue/es')['Tooltip']
     BackgroundPanel: typeof import('./components/BackgroundPanel.vue')['default']
     BottomToolbar: typeof import('./components/BottomToolbar.vue')['default']
     CanvasStage: typeof import('./components/CanvasStage.vue')['default']
     ComponentPanel: typeof import('./components/ComponentPanel.vue')['default']
+    HotTitleModal: typeof import('./components/HotTitleModal.vue')['default']
     MainArea: typeof import('./components/MainArea.vue')['default']
     ResourceManager: typeof import('./components/ResourceManager.vue')['default']
     SidebarLeft: typeof import('./components/SidebarLeft.vue')['default']
