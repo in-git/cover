@@ -111,6 +111,8 @@ body {
 .public-bg-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 90px;
+  align-content: start;
   gap: 8px;
   margin-bottom: 10px;
   overflow-y: auto;
