@@ -3,8 +3,6 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import 'virtual:uno.css'
-// iconify-icon Web Component (注册自定义元素, 提供 <iconify-icon> 标签)
-import 'iconify-icon'
 // 全局样式 (原 style.css, macOS Sonoma 风格)
 import './styles/main.css'
 import App from './App.vue'

@@ -5,6 +5,18 @@ import { useCanvasStore } from '@/stores/canvas';
 import { useResourceStore } from '@/stores/resource';
 import type { ResourceItem } from '@/types';
 import { fontPreviewFamily } from '@/utils/font';
+import {
+  AddText,
+  Check,
+  Close,
+  Delete,
+  Folder,
+  Loading,
+  Open,
+  Pic,
+  Upload,
+  UploadWeb,
+} from '@icon-park/vue-next';
 import { computed, ref } from 'vue';
 
 const resourceStore = useResourceStore();
@@ -92,7 +104,7 @@ function onModalDrop(e: DragEvent): void {
       <!-- 顶部标题栏 -->
       <header class="rm-header">
         <div class="rm-title">
-          <iconify-icon icon="lucide:folder" width="18"></iconify-icon>
+          <Folder :size="18" />
           <span>资源管理器</span>
         </div>
         <button
@@ -100,7 +112,7 @@ function onModalDrop(e: DragEvent): void {
           title="关闭 (Esc)"
           @click="resourceStore.closeResourceManager"
         >
-          <iconify-icon icon="lucide:x" width="18"></iconify-icon>
+          <Close :size="18" />
         </button>
       </header>
 
@@ -114,7 +126,7 @@ function onModalDrop(e: DragEvent): void {
             clearSelection();
           "
         >
-          <iconify-icon icon="lucide:image" width="14"></iconify-icon>
+          <Pic :size="14" />
           图片
           <span class="rm-tab-count">{{
             resourceStore.resourceList.images.length
@@ -128,7 +140,7 @@ function onModalDrop(e: DragEvent): void {
             clearSelection();
           "
         >
-          <iconify-icon icon="lucide:type" width="14"></iconify-icon>
+          <AddText :size="14" />
           字体
           <span class="rm-tab-count">{{
             resourceStore.resourceList.fonts.length
@@ -143,7 +155,7 @@ function onModalDrop(e: DragEvent): void {
           :disabled="resourceStore.rmUploading"
           @click="triggerResourcePick"
         >
-          <iconify-icon icon="lucide:upload" width="14"></iconify-icon>
+          <Upload :size="14" />
           上传
         </button>
         <button
@@ -151,7 +163,7 @@ function onModalDrop(e: DragEvent): void {
           :disabled="selectedCount === 0 || resourceStore.rmDeleting"
           @click="deleteSelected"
         >
-          <iconify-icon icon="lucide:trash-2" width="14"></iconify-icon>
+          <Delete :size="14" />
           删除选中<span v-if="selectedCount" class="rm-batch-count"
             >({{ selectedCount }})</span
           >
@@ -174,11 +186,7 @@ function onModalDrop(e: DragEvent): void {
       <div class="rm-grid-wrap">
         <!-- 加载中 -->
         <div v-if="resourceStore.loadingBackgrounds" class="rm-loading">
-          <iconify-icon
-            icon="lucide:loader-2"
-            width="28"
-            class="rm-spin"
-          ></iconify-icon>
+          <Loading :size="28" spin />
           <span>加载中...</span>
         </div>
 
@@ -189,7 +197,7 @@ function onModalDrop(e: DragEvent): void {
           "
           class="rm-empty"
         >
-          <iconify-icon icon="lucide:package-open" width="40"></iconify-icon>
+          <Open :size="40" />
           <p>
             暂无{{
               resourceStore.rmActiveTab === 'images' ? '图片' : '字体'
@@ -222,11 +230,7 @@ function onModalDrop(e: DragEvent): void {
                 title="选中"
                 @click.stop="toggleSelect(img.url)"
               >
-                <iconify-icon
-                  v-if="selected.has(img.url)"
-                  icon="lucide:check"
-                  width="13"
-                ></iconify-icon>
+                <Check v-if="selected.has(img.url)" :size="13" />
               </button>
             </div>
             <div class="rm-image-meta">
@@ -237,7 +241,7 @@ function onModalDrop(e: DragEvent): void {
                 title="删除"
                 @click="deleteOne(img)"
               >
-                <iconify-icon icon="lucide:trash-2" width="13"></iconify-icon>
+                <Delete :size="13" />
               </button>
             </div>
           </div>
@@ -264,11 +268,7 @@ function onModalDrop(e: DragEvent): void {
                 title="选中"
                 @click.stop="toggleSelect(font.url)"
               >
-                <iconify-icon
-                  v-if="selected.has(font.url)"
-                  icon="lucide:check"
-                  width="13"
-                ></iconify-icon>
+                <Check v-if="selected.has(font.url)" :size="13" />
               </button>
               <span class="rm-font-sample">字体</span>
             </div>
@@ -282,7 +282,7 @@ function onModalDrop(e: DragEvent): void {
                 title="删除"
                 @click="deleteOne(font)"
               >
-                <iconify-icon icon="lucide:trash-2" width="13"></iconify-icon>
+                <Delete :size="13" />
               </button>
             </div>
           </div>
@@ -290,18 +290,14 @@ function onModalDrop(e: DragEvent): void {
 
         <!-- 批量删除 loading 遮罩 -->
         <div v-if="resourceStore.rmDeleting" class="rm-loading-overlay">
-          <iconify-icon
-            icon="lucide:loader-2"
-            width="30"
-            class="rm-spin"
-          ></iconify-icon>
+          <Loading :size="30" spin />
           <span>正在删除...</span>
         </div>
       </div>
 
       <!-- 拖拽上传遮罩 -->
       <div v-if="resourceStore.rmDragging" class="rm-drop-overlay">
-        <iconify-icon icon="lucide:upload-cloud" width="48"></iconify-icon>
+        <UploadWeb :size="48" />
         <span>松开以上传文件</span>
       </div>
 

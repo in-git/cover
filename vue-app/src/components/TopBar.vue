@@ -1,8 +1,11 @@
 <script setup lang="ts">
-// ===== 顶部栏: 平台切换 (左) + 撤销重做与吸附开关 (中, 屏幕水平居中) + 导出按钮 (右) =====
+// ===== 顶部栏: 平台切换 (左) + 撤销重做与吸附开关 (中, 屏幕水平居中) + 资源管理/导出 (右) =====
 import { useCanvasStore } from '@/stores/canvas';
+import { useResourceStore } from '@/stores/resource';
+import { Magnet, Redo, Undo } from '@icon-park/vue-next';
 
 const canvasStore = useCanvasStore();
+const resourceStore = useResourceStore();
 </script>
 
 <template>
@@ -36,7 +39,7 @@ const canvasStore = useCanvasStore();
           title="撤销 (Ctrl+Z)"
           @click="canvasStore.undo"
         >
-          <iconify-icon icon="lucide:undo-2" width="16"></iconify-icon>
+          <Undo :size="16" />
         </button>
         <button
           class="tool-btn icon-only"
@@ -44,7 +47,7 @@ const canvasStore = useCanvasStore();
           title="反撤销 (Ctrl+Y)"
           @click="canvasStore.redo"
         >
-          <iconify-icon icon="lucide:redo-2" width="16"></iconify-icon>
+          <Redo :size="16" />
         </button>
         <span class="tool-divider"></span>
         <button
@@ -57,13 +60,21 @@ const canvasStore = useCanvasStore();
           "
           @click="canvasStore.snapEnabled = !canvasStore.snapEnabled"
         >
-          <iconify-icon icon="lucide:magnet" width="18"></iconify-icon>
+          <Magnet :size="18" />
         </button>
       </div>
     </div>
 
-    <!-- 右: 导出按钮 -->
+    <!-- 右: 资源管理 + 导出按钮 -->
     <div class="top-bar-right">
+      <button
+        class="btn-apple"
+        title="打开资源管理器 (上传/管理 图片与字体)"
+        @click="resourceStore.openResourceManager"
+      >
+        <FolderOpen :size="14" />
+        资源管理
+      </button>
       <button
         class="btn-apple"
         title="导出当前平台封面"

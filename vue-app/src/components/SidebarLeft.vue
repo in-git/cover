@@ -1,12 +1,13 @@
 <script setup lang="ts">
-// ===== 左侧栏: 模板中心 + 资源管理器入口 + 本地图片快选 =====
-import { useCanvasStore } from '@/stores/canvas'
-import { useTemplateStore } from '@/stores/template'
-import { useResourceStore } from '@/stores/resource'
+// ===== 左侧栏: 模板中心 + 背景图快选 (含 simplex 噪声随机生成) =====
+import { useCanvasStore } from '@/stores/canvas';
+import { useResourceStore } from '@/stores/resource';
+import { useTemplateStore } from '@/stores/template';
+import { Add, Close, Magic } from '@icon-park/vue-next';
 
-const canvasStore = useCanvasStore()
-const templateStore = useTemplateStore()
-const resourceStore = useResourceStore()
+const canvasStore = useCanvasStore();
+const templateStore = useTemplateStore();
+const resourceStore = useResourceStore();
 </script>
 
 <template>
@@ -19,7 +20,7 @@ const resourceStore = useResourceStore()
         @click="canvasStore.createEmptyTemplate"
         title="新增空白模板"
       >
-        <iconify-icon icon="lucide:plus" width="16"></iconify-icon>
+        <Add :size="16" />
       </button>
     </div>
 
@@ -32,7 +33,10 @@ const resourceStore = useResourceStore()
         @click="canvasStore.loadTemplate(tpl)"
       >
         <div class="tpl-info">
-          <div class="tpl-color-preview" :style="{ background: tpl.bgPreview }"></div>
+          <div
+            class="tpl-color-preview"
+            :style="{ background: tpl.bgPreview }"
+          ></div>
           <span class="tpl-title">{{ tpl.name }}</span>
         </div>
         <div class="tpl-actions">
@@ -41,7 +45,7 @@ const resourceStore = useResourceStore()
             @click.stop="templateStore.deleteTemplate(index)"
             title="删除模板"
           >
-            <iconify-icon icon="lucide:x" width="14"></iconify-icon>
+            <Close :size="14" />
           </button>
         </div>
       </div>
@@ -49,15 +53,15 @@ const resourceStore = useResourceStore()
 
     <div class="divider"></div>
 
-    <!-- 资源管理器入口 -->
+    <!-- 背景图: 随机生成 + 本地图片快选 -->
     <div class="sidebar-header">
-      <span class="section-title">资源管理器</span>
+      <span class="section-title">背景图</span>
       <button
         class="btn-icon-only"
-        @click="resourceStore.openResourceManager"
-        title="打开资源管理器"
+        @click="canvasStore.applyNoiseBackground"
+        title="使用 SimplexNoise 随机生成一张背景图"
       >
-        <iconify-icon icon="lucide:folder-open" width="16"></iconify-icon>
+        <Magic :size="16" />
       </button>
     </div>
 
@@ -76,7 +80,7 @@ const resourceStore = useResourceStore()
         class="empty-bg-hint"
         @click="resourceStore.openResourceManager"
       >
-        点击打开资源管理器上传图片
+        点击右上「资源管理」上传图片
       </div>
     </div>
     <div v-else class="loading-bg">加载中...</div>

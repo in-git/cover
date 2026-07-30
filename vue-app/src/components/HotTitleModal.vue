@@ -5,11 +5,20 @@
 import { useCanvasStore } from '@/stores/canvas';
 import { useUiStore } from '@/stores/ui';
 import { HOT_TITLE_GROUPS } from '@/utils/constants';
+import { Close, Fire, Globe, PageTemplate } from '@icon-park/vue-next';
+import type { Component } from 'vue';
 
 const canvasStore = useCanvasStore();
 const uiStore = useUiStore();
 
 const groups = HOT_TITLE_GROUPS;
+
+// 分组图标 key -> IconPark 组件映射 (保留按需引入, 避免 es/all 全量打包)
+const iconMap: Record<string, Component> = {
+  globe: Globe,
+  'page-template': PageTemplate,
+  fire: Fire,
+};
 
 /** 应用标题到当前选中文字并关闭模态框 */
 function applyAndClose(text: string): void {
@@ -28,7 +37,7 @@ function applyAndClose(text: string): void {
       <!-- 顶部标题栏 -->
       <header class="ht-header">
         <div class="ht-title">
-          <iconify-icon icon="lucide:flame" width="18"></iconify-icon>
+          <Fire :size="18" />
           <span>爆款标题推荐</span>
         </div>
         <button
@@ -36,7 +45,7 @@ function applyAndClose(text: string): void {
           title="关闭 (Esc)"
           @click="uiStore.showHotTitles = false"
         >
-          <iconify-icon icon="lucide:x" width="18"></iconify-icon>
+          <Close :size="18" />
         </button>
       </header>
 
@@ -45,13 +54,9 @@ function applyAndClose(text: string): void {
 
       <!-- 分组列表 (滚动) -->
       <div class="ht-body">
-        <section
-          v-for="g in groups"
-          :key="g.category"
-          class="ht-group"
-        >
+        <section v-for="g in groups" :key="g.category" class="ht-group">
           <div class="ht-group-title">
-            <iconify-icon :icon="g.icon" width="14"></iconify-icon>
+            <component :is="iconMap[g.icon]" :size="14" />
             <span>{{ g.category }}</span>
             <span class="ht-group-count">{{ g.titles.length }}</span>
           </div>

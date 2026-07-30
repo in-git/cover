@@ -8,28 +8,28 @@ importers:
 
   .:
     dependencies:
+      '@icon-park/vue-next':
+        specifier: ^1.4.2
+        version: 1.4.2(vue@3.5.40(typescript@5.9.3))
       ant-design-vue:
         specifier: ^4.2.6
         version: 4.2.6(vue@3.5.40(typescript@5.9.3))
       fabric:
         specifier: ^5.3.0
         version: 5.5.2
-      iconify-icon:
-        specifier: ^2.1.0
-        version: 2.3.0
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.9.3)(vue@3.5.40(typescript@5.9.3))
       pinia-plugin-persistedstate:
         specifier: ^4.1.3
         version: 4.7.1(pinia@3.0.4(typescript@5.9.3)(vue@3.5.40(typescript@5.9.3)))
+      simplex-noise:
+        specifier: ^4.0.3
+        version: 4.0.3
       vue:
         specifier: ^3.5.13
         version: 3.5.40(typescript@5.9.3)
     devDependencies:
-      '@iconify-json/lucide':
-        specifier: ^1.2.18
-        version: 1.2.120
       '@types/fabric':
         specifier: ^5.3.11
         version: 5.3.11
@@ -37,9 +37,6 @@ importers:
         specifier: ^22.10.2
         version: 22.20.1
       '@unocss/preset-attributify':
-        specifier: ^0.65.3
-        version: 0.65.4
-      '@unocss/preset-icons':
         specifier: ^0.65.3
         version: 0.65.4
       '@unocss/preset-uno':
@@ -433,8 +430,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@iconify-json/lucide@1.2.120':
-    resolution: {integrity: sha512-4ECF24fxag1n5tZlPGrbWuCGqhkwD0rvAzfCXretqQb4KEC8Y6ja3khF8qmvpR1Mk0NQDhBTRK3Fr/YoV8QyJw==}
+  '@icon-park/vue-next@1.4.2':
+    resolution: {integrity: sha512-+QklF255wkfBOabY+xw6FAI0Bwln/RhdwCunNy/9sKdKuChtaU67QZqU67KGAvZUTeeBgsL+yaHHxqfQeGZXEQ==}
+    engines: {node: '>= 8.0.0', npm: '>= 5.0.0'}
+    peerDependencies:
+      vue: 3.x
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -1176,9 +1176,6 @@ packages:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
     engines: {node: '>= 6'}
 
-  iconify-icon@2.3.0:
-    resolution: {integrity: sha512-C0beI9oTDxQz6voI5CKl7MiJf0Lw4UU8K4G4t6pcUDClLmCvuMOpcvd8MAztQ2SfoH0iv7WHdxBFjekKPFKH2Q==}
-
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
@@ -1540,6 +1537,9 @@ packages:
 
   simple-get@3.1.1:
     resolution: {integrity: sha512-CQ5LTKGfCpvE1K0n2us+kuMPbk/q0EKl82s4aheV9oXjFEz6W/Y7oQFVJuU6QG77hRT4Ghb5RURteF5vnWjupA==}
+
+  simplex-noise@4.0.3:
+    resolution: {integrity: sha512-qSE2I4AngLQG7BXqoZj51jokT4WUXe8mOBrvfOXpci8+6Yu44+/dD5zqDpOx3Ux792eamTd2lLcI8jqFntk/lg==}
 
   sirv@3.0.2:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
@@ -2012,9 +2012,9 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
-  '@iconify-json/lucide@1.2.120':
+  '@icon-park/vue-next@1.4.2(vue@3.5.40(typescript@5.9.3))':
     dependencies:
-      '@iconify/types': 2.0.0
+      vue: 3.5.40(typescript@5.9.3)
 
   '@iconify/types@2.0.0': {}
 
@@ -2935,10 +2935,6 @@ snapshots:
       - supports-color
     optional: true
 
-  iconify-icon@2.3.0:
-    dependencies:
-      '@iconify/types': 2.0.0
-
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
@@ -3335,6 +3331,8 @@ snapshots:
       once: 1.4.0
       simple-concat: 1.0.1
     optional: true
+
+  simplex-noise@4.0.3: {}
 
   sirv@3.0.2:
     dependencies:

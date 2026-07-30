@@ -17,7 +17,12 @@ export function useCanvasObjects(state: CanvasState, history: CanvasHistory) {
     let val: any = activeProps[prop];
     if (prop === 'fontSize' || prop === 'opacity' || prop === 'angle')
       val = Number(val);
-    activeObject.value.set(prop, val);
+    // 分割线 (fabric.Line) 颜色由 stroke 控制, fill 不参与渲染, 需同步到 stroke
+    if (prop === 'fill' && activeObject.value.type === 'line') {
+      activeObject.value.set('stroke', val);
+    } else {
+      activeObject.value.set(prop, val);
+    }
     activeObject.value.setCoords();
     currentCanvas.value?.requestRenderAll();
     autoSaveTemplate();

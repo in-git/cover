@@ -4,6 +4,16 @@ import { useCanvasStore } from '@/stores/canvas';
 import { useResourceStore } from '@/stores/resource';
 import { useUiStore } from '@/stores/ui';
 import { fontPreviewFamily } from '@/utils/font';
+import {
+  Delete,
+  Group,
+  HorizontallyCentered,
+  Magic,
+  ToBottom,
+  ToTop,
+  Ungroup,
+  VerticallyCentered,
+} from '@icon-park/vue-next';
 import { computed, ref } from 'vue';
 
 const canvasStore = useCanvasStore();
@@ -59,10 +69,7 @@ function onFontChange(value: string): void {
           <a-tooltip title="水平居中" placement="top">
             <span class="tip-wrap">
               <button class="action-cell" @click="canvasStore.centerObjectH">
-                <iconify-icon
-                  icon="icon-park:horizontally-centered"
-                  width="20"
-                ></iconify-icon>
+                <HorizontallyCentered :size="20" />
                 <span>水平居中</span>
               </button>
             </span>
@@ -70,10 +77,7 @@ function onFontChange(value: string): void {
           <a-tooltip title="垂直居中" placement="top">
             <span class="tip-wrap">
               <button class="action-cell" @click="canvasStore.centerObjectV">
-                <iconify-icon
-                  icon="icon-park:vertically-centered"
-                  width="20"
-                ></iconify-icon>
+                <VerticallyCentered :size="20" />
                 <span>垂直居中</span>
               </button>
             </span>
@@ -85,7 +89,7 @@ function onFontChange(value: string): void {
                 :disabled="!canvasStore.canGroup"
                 @click="canvasStore.groupObjects"
               >
-                <iconify-icon icon="icon-park:group" width="20"></iconify-icon>
+                <Group :size="20" />
                 <span>编组</span>
               </button>
             </span>
@@ -97,10 +101,7 @@ function onFontChange(value: string): void {
                 :disabled="!canvasStore.canUngroup"
                 @click="canvasStore.ungroupObjects"
               >
-                <iconify-icon
-                  icon="icon-park:ungroup"
-                  width="20"
-                ></iconify-icon>
+                <Ungroup :size="20" />
                 <span>取消编组</span>
               </button>
             </span>
@@ -108,7 +109,7 @@ function onFontChange(value: string): void {
           <a-tooltip title="移至顶层" placement="top">
             <span class="tip-wrap">
               <button class="action-cell" @click="canvasStore.bringToFront">
-                <iconify-icon icon="icon-park:to-top" width="20"></iconify-icon>
+                <ToTop :size="20" />
                 <span>移至顶层</span>
               </button>
             </span>
@@ -116,10 +117,7 @@ function onFontChange(value: string): void {
           <a-tooltip title="移至底层" placement="top">
             <span class="tip-wrap">
               <button class="action-cell" @click="canvasStore.sendToBack">
-                <iconify-icon
-                  icon="icon-park:to-bottom"
-                  width="20"
-                ></iconify-icon>
+                <ToBottom :size="20" />
                 <span>移至底层</span>
               </button>
             </span>
@@ -130,7 +128,7 @@ function onFontChange(value: string): void {
                 class="action-cell danger"
                 @click="canvasStore.deleteObject"
               >
-                <iconify-icon icon="icon-park:delete" width="20"></iconify-icon>
+                <Delete :size="20" />
                 <span>删除</span>
               </button>
             </span>
@@ -193,9 +191,8 @@ function onFontChange(value: string): void {
           @click="uiStore.showHotTitles = true"
           style="margin-top: 10px"
         >
-          <iconify-icon icon="lucide:sparkles" width="14"></iconify-icon>
-          <span>展开爆款标题库</span>
-          <iconify-icon icon="lucide:chevron-right" width="14"></iconify-icon>
+          <Magic :size="14" />
+          <div class="text-nowrap">展开爆款标题库</div>
         </button>
 
         <!-- 字体选择 (2x2 网格, 参照资源管理器展示, 示例文本「字体」) -->

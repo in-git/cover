@@ -35,7 +35,11 @@ export function useCanvasSelection(state: CanvasState, history: CanvasHistory) {
     isImage.value = obj.type === 'image';
     hasColor.value = !isImage.value && obj.type !== 'group';
 
-    activeProps.fill = obj.fill || obj.stroke || '#FEC000';
+    // 分割线 (fabric.Line) 颜色由 stroke 控制, 优先读 stroke; 其它元素读 fill
+    activeProps.fill =
+      obj.type === 'line'
+        ? obj.stroke || '#FEC000'
+        : obj.fill || obj.stroke || '#FEC000';
     activeProps.opacity = obj.opacity ?? 1;
     activeProps.angle = obj.angle ?? 0;
     if (isText.value) {

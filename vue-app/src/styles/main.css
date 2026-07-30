@@ -422,6 +422,9 @@ body {
 }
 
 .btn-apple {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 7px 16px;
   border-radius: 20px;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -430,6 +433,7 @@ body {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
+  font-family: inherit;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.2s;
 }
@@ -622,14 +626,6 @@ input[type='color']::-webkit-color-swatch {
   border-color: rgba(0, 113, 227, 0.28);
 }
 
-.hot-title-open-btn iconify-icon {
-  pointer-events: none;
-}
-
-.hot-title-open-btn span {
-  flex: 1;
-}
-
 /* ===== 爆款标题模态框 (浅色磨砂, macOS 风格) ===== */
 .ht-overlay {
   position: fixed;
@@ -700,7 +696,7 @@ input[type='color']::-webkit-color-swatch {
   color: var(--text-primary);
 }
 
-.ht-title iconify-icon {
+.ht-title svg {
   color: var(--accent);
 }
 
@@ -749,7 +745,7 @@ input[type='color']::-webkit-color-swatch {
   margin-bottom: 8px;
 }
 
-.ht-group-title iconify-icon {
+.ht-group-title svg {
   color: var(--accent);
 }
 
@@ -980,8 +976,8 @@ input[type='color']::-webkit-color-swatch {
   gap: 4px;
 }
 
-/* Iconify 图标对齐与交互补丁: 防止在 flex 按钮中被压缩, 并避免拦截点击 */
-button iconify-icon {
+/* IconPark 图标对齐与交互补丁: 防止在 flex 按钮中被压缩, 并避免拦截点击 */
+button svg {
   flex-shrink: 0;
   pointer-events: none;
 }
@@ -1222,7 +1218,7 @@ button iconify-icon {
   color: var(--rm-text-primary);
 }
 
-.rm-title iconify-icon {
+.rm-title svg {
   color: var(--rm-accent);
 }
 
@@ -1412,7 +1408,7 @@ button iconify-icon {
   color: var(--rm-text-tertiary);
 }
 
-.rm-empty iconify-icon {
+.rm-empty svg {
   opacity: 0.4;
 }
 
@@ -1439,11 +1435,7 @@ button iconify-icon {
   font-size: 12px;
 }
 
-/* 旋转动画 */
-.rm-spin {
-  animation: rmSpin 0.8s linear infinite;
-}
-
+/* 旋转动画 (IconPark Loading 组件自带 spin 属性, 此规则已无消费者, 保留以备复用) */
 @keyframes rmSpin {
   to {
     transform: rotate(360deg);

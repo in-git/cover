@@ -14,7 +14,7 @@ export const TEMPLATES_STORAGE_KEY = 'cover_studio_templates';
 export interface HotTitleGroup {
   /** 分类名 */
   category: string;
-  /** iconify 图标名 */
+  /** IconPark 图标 key (HotTitleModal 中通过 iconMap 映射为组件) */
   icon: string;
   /** 该分类下的标题列表 */
   titles: string[];
@@ -24,7 +24,7 @@ export interface HotTitleGroup {
 export const HOT_TITLE_GROUPS: HotTitleGroup[] = [
   {
     category: '互联网话题',
-    icon: 'lucide:globe',
+    icon: 'globe',
     titles: [
       '全网爆火的AI工具，90%的人不知道',
       '我用AI做了个网站，结果出乎意料',
@@ -42,7 +42,7 @@ export const HOT_TITLE_GROUPS: HotTitleGroup[] = [
   },
   {
     category: '网页话题',
-    icon: 'lucide:layout-template',
+    icon: 'page-template',
     titles: [
       '这10个神仙网站，用过就回不去了',
       '免费看全网VIP视频的秘密武器',
@@ -60,7 +60,7 @@ export const HOT_TITLE_GROUPS: HotTitleGroup[] = [
   },
   {
     category: '通用爆款',
-    icon: 'lucide:flame',
+    icon: 'fire',
     titles: [
       '千万别学前端了！？',
       '我用AI一周赚了10W？',
